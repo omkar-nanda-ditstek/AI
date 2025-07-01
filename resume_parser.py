@@ -120,39 +120,125 @@ class ResumeParser:
         return enhanced
     
     def _extract_name_spacy(self, text: str) -> str:
-        if not self.nlp:
-            return self._extract_name_fallback(text)
+        # Try multiple extraction methods
         
-        # Try spaCy NER first
-        doc = self.nlp(text[:500])
-        for ent in doc.ents:
-            if ent.label_ == "PERSON" and len(ent.text.split()) >= 2:
-                return ent.text
+        # Method 1: spaCy NER
+        if self.nlp:
+            doc = self.nlp(text[:1000])
+            for ent in doc.ents:
+                if (ent.label_ == "PERSON" and 
+                    len(ent.text.split()) >= 2 and 
+                    self._is_valid_name(ent.text)):
+                    return ent.text.strip()
         
-        # Fallback to pattern matching
+        # Method 2: Pattern-based extraction
+        name = self._extract_name_patterns(text)
+        if name and name != "Unknown" and name != "Name not found in PDF":
+            return name
+        
+        # Method 3: Fallback
         return self._extract_name_fallback(text)
     
-    def _extract_name_fallback(self, text: str) -> str:
-        lines = [line.strip() for line in text.split('\n') if line.strip()]
+    def _extract_name_patterns(self, text: str) -> str:
+        # Method 1: Look for names at the very beginning (first few lines)
+        lines = text.split('\n')
+        for i, line in enumerate(lines[:5]):
+            line = line.strip()
+            # Clean line of special characters but keep spaces
+            clean_line = re.sub(r'[^a-zA-Z\s]', ' ', line).strip()
+            clean_line = ' '.join(clean_line.split())  # Remove extra spaces
+            
+            if clean_line and self._is_valid_name(clean_line):
+                return clean_line
         
-        # Look for name patterns in first 10 lines
-        for line in lines[:10]:
-            # Skip lines with common non-name content
-            if (len(line) > 3 and len(line) < 60 and 
-                not '@' in line and 
-                not 'www.' in line.lower() and
-                not re.search(r'[+]?\d{2,3}[\s\-]?\d{3,4}[\s\-]?\d{4,7}', line) and
-                not any(word in line.lower() for word in ['resume', 'cv', 'curriculum', 'about', 'profile', 'summary', 'objective']) and
-                len(line.split()) >= 2 and len(line.split()) <= 4 and
-                not line.isupper() and  # Skip all caps headers
-                any(c.isupper() for c in line)):  # Must have some capitals
+        # Method 2: Look for "FIRSTNAME\nLASTNAME" pattern (like ELIANA\nSAUNDERS)
+        for i in range(len(lines) - 1):
+            line1 = lines[i].strip()
+            line2 = lines[i + 1].strip()
+            
+            # Clean both lines
+            clean1 = re.sub(r'[^a-zA-Z]', '', line1)
+            clean2 = re.sub(r'[^a-zA-Z]', '', line2)
+            
+            if (clean1 and clean2 and 
+                clean1.isalpha() and clean2.isalpha() and
+                clean1[0].isupper() and clean2[0].isupper() and
+                3 <= len(clean1) <= 15 and 3 <= len(clean2) <= 15):
                 
-                # Additional validation - should look like a name
-                words = line.split()
-                if all(word[0].isupper() and word[1:].islower() for word in words if word.isalpha()):
-                    return line
+                full_name = f"{clean1} {clean2}"
+                if self._is_valid_name(full_name):
+                    return full_name
         
-        return "Unknown"
+        # Method 3: Traditional patterns
+        name_patterns = [
+            r'Name[:\s]+([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)',
+            r'([A-Z][a-z]+\s+[A-Z][a-z]+)\s*\n.*(?:Developer|Engineer|Manager|Analyst)',
+            r'I am ([A-Z][a-z]+\s+[A-Z][a-z]+)',
+            r'My name is ([A-Z][a-z]+\s+[A-Z][a-z]+)'
+        ]
+        
+        for pattern in name_patterns:
+            matches = re.findall(pattern, text, re.MULTILINE | re.IGNORECASE)
+            for match in matches:
+                if self._is_valid_name(match):
+                    return match.strip()
+        
+        return self._extract_name_fallback(text)
+    
+    def _is_valid_name(self, name: str) -> bool:
+        """Validate if text looks like a person's name"""
+        if not name or len(name) < 3 or len(name) > 50:
+            return False
+        
+        words = name.split()
+        if len(words) < 2 or len(words) > 4:
+            return False
+        
+        # Each word should start with capital and be mostly alphabetic
+        for word in words:
+            if not word or not word[0].isupper() or not word.replace('.', '').isalpha():
+                return False
+        
+        # Avoid common non-name patterns
+        avoid_words = {
+            'About', 'Profile', 'Summary', 'Resume', 'Developer', 'Engineer', 'Manager',
+            'Technical', 'Skills', 'Personal', 'Professional', 'Experience', 'Education',
+            'JavaScript', 'Angular', 'Node', 'HTML', 'CSS', 'Communication', 'Organization',
+            'Senior', 'Junior', 'Lead', 'Principal', 'Staff', 'Contact', 'Information',
+            'College', 'University', 'Bachelor', 'Master', 'Science', 'Arts', 'Commerce'
+        }
+        if any(word in avoid_words for word in words):
+            return False
+        
+        # Avoid technical skill combinations and multi-line text
+        if '\n' in name or '\xa0' in name:
+            return False
+        
+        tech_combinations = ['Node JS', 'Angular JS', 'HTML CSS', 'JavaScript HTML', 'CSS JavaScript']
+        if name in tech_combinations:
+            return False
+        
+        # Check if it contains only technical terms
+        tech_terms = {'JavaScript', 'HTML', 'CSS', 'Node', 'Angular', 'React', 'Python', 'Java'}
+        name_words = set(words)
+        if name_words.issubset(tech_terms):
+            return False
+        
+        return True
+    
+    def _extract_name_fallback(self, text: str) -> str:
+        # For this specific PDF format, try to find name in different sections
+        
+        # Look for patterns like "Name: John Doe" or similar
+        name_indicators = ['name', 'candidate', 'applicant']
+        for indicator in name_indicators:
+            pattern = rf'{indicator}[:\s]+([A-Z][a-z]+\s+[A-Z][a-z]+)'
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match and self._is_valid_name(match.group(1)):
+                return match.group(1)
+        
+        # If still no name found, return a clear message
+        return "[Name not clearly visible in PDF]"
     
     def _extract_email(self, text: str) -> str:
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
