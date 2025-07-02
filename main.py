@@ -185,6 +185,135 @@ async def search_resumes(criteria: SearchCriteria):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error searching resumes: {str(e)}")
 
+class SkillUpdate(BaseModel):
+    skill: str
+
+class SkillsUpdate(BaseModel):
+    skills: List[str]
+
+@app.post("/add-skill/{resume_id}")
+async def add_skill(resume_id: str, skill_data: SkillUpdate):
+    """Add a skill to resume"""
+    try:
+        from bson import ObjectId
+        
+        # Add skill to MongoDB using $addToSet to avoid duplicates
+        result = db_manager.db.resumes.update_one(
+            {"_id": ObjectId(resume_id)},
+            {
+                "$addToSet": {"parsed_data.skills": skill_data.skill},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        
+        if result.modified_count > 0:
+            return {
+                "statusCode": 200,
+                "success": True,
+                "message": f"Skill '{skill_data.skill}' added successfully",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "path": f"/add-skill/{resume_id}"
+            }
+        else:
+            return {
+                "statusCode": 404,
+                "success": False,
+                "message": "Resume not found or skill already exists",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "path": f"/add-skill/{resume_id}"
+            }
+            
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "success": False,
+            "message": f"Error adding skill: {str(e)}",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "path": f"/add-skill/{resume_id}"
+        }
+
+@app.delete("/remove-skill/{resume_id}")
+async def remove_skill(resume_id: str, skill_data: SkillUpdate):
+    """Remove a skill from resume"""
+    try:
+        from bson import ObjectId
+        
+        # Remove skill from MongoDB
+        result = db_manager.db.resumes.update_one(
+            {"_id": ObjectId(resume_id)},
+            {
+                "$pull": {"parsed_data.skills": skill_data.skill},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        
+        if result.modified_count > 0:
+            return {
+                "statusCode": 200,
+                "success": True,
+                "message": f"Skill '{skill_data.skill}' removed successfully",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "path": f"/remove-skill/{resume_id}"
+            }
+        else:
+            return {
+                "statusCode": 404,
+                "success": False,
+                "message": "Resume not found or skill doesn't exist",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "path": f"/remove-skill/{resume_id}"
+            }
+            
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "success": False,
+            "message": f"Error removing skill: {str(e)}",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "path": f"/remove-skill/{resume_id}"
+        }
+
+@app.put("/update-skills/{resume_id}")
+async def update_skills(resume_id: str, skills_data: SkillsUpdate):
+    """Update all skills for a resume"""
+    try:
+        from bson import ObjectId
+        
+        # Update skills in MongoDB
+        result = db_manager.db.resumes.update_one(
+            {"_id": ObjectId(resume_id)},
+            {"$set": {
+                "parsed_data.skills": skills_data.skills,
+                "updated_at": datetime.utcnow()
+            }}
+        )
+        
+        if result.modified_count > 0:
+            return {
+                "statusCode": 200,
+                "success": True,
+                "message": "Skills updated successfully",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "path": f"/update-skills/{resume_id}"
+            }
+        else:
+            return {
+                "statusCode": 404,
+                "success": False,
+                "message": "Resume not found",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "path": f"/update-skills/{resume_id}"
+            }
+            
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "success": False,
+            "message": f"Error updating skills: {str(e)}",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "path": f"/update-skills/{resume_id}"
+        }
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
