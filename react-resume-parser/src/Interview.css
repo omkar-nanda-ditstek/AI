@@ -1,0 +1,1059 @@
+* {
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+}
+
+.interview-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  height: 100vh;
+  min-height: 100vh;
+  width: 100vw;
+  background: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+}
+
+.avatar-section {
+  flex: 1;
+  background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: white;
+}
+
+.avatar {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease;
+  overflow: hidden;
+}
+
+.video-avatar {
+  width: 280px;
+  height: 350px;
+  margin-bottom: 25px;
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 
+    0 25px 50px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  background: linear-gradient(145deg, #1a1a1a, #2d2d2d);
+}
+
+.video-frame {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.face-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 280px;
+}
+
+.face {
+  position: relative;
+  width: 140px;
+  height: 180px;
+  margin: 0 auto;
+  background: radial-gradient(ellipse at 30% 30%, #FDBCB4, #F4A6A6);
+  border-radius: 50% 50% 45% 45%;
+  box-shadow: inset 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.hair {
+  position: absolute;
+  top: -20px;
+  left: -15px;
+  width: 170px;
+  height: 120px;
+  background: linear-gradient(135deg, #8B4513, #A0522D, #654321);
+  border-radius: 50% 50% 40% 40%;
+  z-index: -1;
+}
+
+.eyebrow {
+  position: absolute;
+  width: 25px;
+  height: 4px;
+  background: #654321;
+  border-radius: 2px;
+  top: 45px;
+}
+
+.eyebrow.left { left: 25px; transform: rotate(-5deg); }
+.eyebrow.right { right: 25px; transform: rotate(5deg); }
+
+.eye {
+  position: absolute;
+  width: 18px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  top: 55px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.eye.left { left: 30px; }
+.eye.right { right: 30px; }
+
+.eyeball {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #4A90E2;
+  border-radius: 50%;
+  top: 1px;
+  left: 4px;
+}
+
+.pupil {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #000;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+}
+
+.nose {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  background: #F4A6A6;
+  border-radius: 50%;
+  top: 75px;
+  left: 66px;
+  box-shadow: inset -1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.cheek {
+  position: absolute;
+  width: 20px;
+  height: 15px;
+  background: rgba(244, 166, 166, 0.6);
+  border-radius: 50%;
+  top: 85px;
+}
+
+.cheek.left { left: 15px; }
+.cheek.right { right: 15px; }
+
+.mouth {
+  position: absolute;
+  width: 30px;
+  height: 15px;
+  top: 105px;
+  left: 55px;
+  transition: all 0.1s ease;
+}
+
+.upper-lip, .lower-lip {
+  position: absolute;
+  background: #E85A4F;
+  border-radius: 50%;
+  transition: all 0.1s ease;
+}
+
+.upper-lip {
+  width: 30px;
+  height: 8px;
+  top: 0;
+  border-radius: 15px 15px 50% 50%;
+}
+
+.lower-lip {
+  width: 28px;
+  height: 10px;
+  bottom: 0;
+  left: 1px;
+  border-radius: 50% 50% 15px 15px;
+}
+
+.teeth {
+  position: absolute;
+  width: 20px;
+  height: 3px;
+  background: white;
+  top: 6px;
+  left: 5px;
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.mouth.talking {
+  animation: lipSync 0.3s infinite alternate;
+}
+
+.mouth.talking .teeth {
+  opacity: 1;
+}
+
+.mouth.talking .upper-lip {
+  transform: translateY(-2px) scaleY(0.8);
+}
+
+.mouth.talking .lower-lip {
+  transform: translateY(2px) scaleY(1.2);
+}
+
+@keyframes lipSync {
+  0% { height: 15px; }
+  50% { height: 20px; }
+  100% { height: 15px; }
+}
+
+.chin {
+  position: absolute;
+  width: 60px;
+  height: 30px;
+  background: radial-gradient(ellipse at 50% 0%, #FDBCB4, #F4A6A6);
+  border-radius: 50%;
+  bottom: -10px;
+  left: 40px;
+}
+
+.neck {
+  position: absolute;
+  width: 40px;
+  height: 60px;
+  background: linear-gradient(to bottom, #FDBCB4, #F4A6A6);
+  bottom: 40px;
+  left: 80px;
+  border-radius: 0 0 20px 20px;
+}
+
+.shoulders {
+  position: absolute;
+  width: 160px;
+  height: 80px;
+  bottom: 0;
+  left: 20px;
+}
+
+.blazer {
+  width: 100%;
+  height: 60px;
+  background: linear-gradient(135deg, #2C3E50, #34495E);
+  border-radius: 20px 20px 0 0;
+}
+
+.shirt {
+  position: absolute;
+  width: 80px;
+  height: 40px;
+  background: white;
+  top: 10px;
+  left: 40px;
+  border-radius: 10px;
+}
+
+.video-avatar.speaking {
+  animation: videoCall 2s infinite;
+}
+
+@keyframes videoCall {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.02); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.01); }
+}
+
+.video-controls {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
+.recording-indicator {
+  width: 12px;
+  height: 12px;
+  background: #dc3545;
+  border-radius: 50%;
+  opacity: 0.3;
+  transition: all 0.3s ease;
+}
+
+.recording-indicator.active {
+  opacity: 1;
+  animation: recordingPulse 1s infinite;
+}
+
+@keyframes recordingPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.avatar svg {
+  width: 160px;
+  height: 160px;
+}
+
+/* Landscape Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .interview-container {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: row;
+    flex-direction: row;
+    height: 100vh;
+  }
+  
+  .avatar-section {
+    flex: 0.6;
+    height: 100vh;
+    padding: 10px;
+  }
+  
+  .video-avatar {
+    width: 140px;
+    height: 180px;
+  }
+  
+  .face {
+    width: 90px;
+    height: 115px;
+  }
+  
+  .question-section {
+    flex: 1.4;
+    padding: 15px;
+  }
+  
+  .question-text {
+    font-size: 16px;
+    min-height: 80px;
+    padding: 12px;
+  }
+  
+  .answer-input {
+    min-height: 60px;
+    padding: 10px;
+  }
+  
+  .controls {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: row;
+    flex-direction: row;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .btn {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .interview-container {
+    flex-direction: row;
+    height: 100vh;
+  }
+  
+  .avatar-section {
+    flex: 0.8;
+    padding: 25px;
+  }
+  
+  .video-avatar {
+    width: 220px;
+    height: 280px;
+  }
+  
+  .question-section {
+    flex: 1.2;
+    padding: 30px;
+  }
+  
+  .question-text {
+    font-size: 20px;
+    min-height: 150px;
+  }
+  
+  .answer-input {
+    min-height: 120px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .interview-container {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .avatar-section {
+    height: 280px;
+    padding: 15px;
+    flex: none;
+  }
+  
+  .video-avatar {
+    width: 180px;
+    height: 220px;
+  }
+  
+  .face {
+    width: 110px;
+    height: 140px;
+  }
+  
+  .hair {
+    width: 140px;
+    height: 100px;
+    top: -12px;
+    left: -15px;
+  }
+  
+  .eyebrow {
+    width: 20px;
+    height: 3px;
+    top: 35px;
+  }
+  
+  .eyebrow.left { left: 20px; }
+  .eyebrow.right { right: 20px; }
+  
+  .eye {
+    width: 14px;
+    height: 10px;
+    top: 42px;
+  }
+  
+  .eye.left { left: 24px; }
+  .eye.right { right: 24px; }
+  
+  .eyeball {
+    width: 8px;
+    height: 8px;
+    left: 3px;
+  }
+  
+  .pupil {
+    width: 3px;
+    height: 3px;
+    top: 2px;
+    left: 2px;
+  }
+  
+  .nose {
+    width: 6px;
+    height: 10px;
+    top: 58px;
+    left: 52px;
+  }
+  
+  .mouth {
+    width: 25px;
+    height: 12px;
+    top: 80px;
+    left: 42px;
+  }
+  
+  .upper-lip {
+    width: 25px;
+    height: 6px;
+  }
+  
+  .lower-lip {
+    width: 23px;
+    height: 8px;
+  }
+  
+  .teeth {
+    width: 16px;
+    height: 2px;
+    top: 5px;
+    left: 4px;
+  }
+  
+  .chin {
+    width: 50px;
+    height: 25px;
+    bottom: -8px;
+    left: 30px;
+  }
+  
+  .neck {
+    width: 32px;
+    height: 48px;
+    bottom: 32px;
+    left: 64px;
+  }
+  
+  .shoulders {
+    width: 130px;
+    height: 65px;
+    bottom: 0;
+    left: 15px;
+  }
+  
+  .blazer {
+    height: 48px;
+  }
+  
+  .shirt {
+    width: 65px;
+    height: 32px;
+    top: 8px;
+    left: 32px;
+  }
+  
+  .interviewer-name {
+    font-size: 20px;
+  }
+  
+  .interviewer-title {
+    font-size: 14px;
+  }
+  
+  .interviewer-status {
+    font-size: 12px;
+  }
+  
+  .mute-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  
+  .question-section {
+    padding: 20px;
+    -webkit-box-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+    min-height: 60vh;
+  }
+  
+  .question-counter {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .question-text {
+    font-size: 18px;
+    min-height: 120px;
+    padding: 16px;
+  }
+  
+  .answer-input {
+    min-height: 100px;
+    padding: 16px;
+    font-size: 16px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  .conversation-hint {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .interview-container {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .avatar-section {
+    height: 200px;
+    padding: 10px;
+  }
+  
+  .video-avatar {
+    width: 120px;
+    height: 150px;
+  }
+  
+  .face {
+    width: 80px;
+    height: 100px;
+  }
+  
+  .hair {
+    width: 100px;
+    height: 60px;
+    top: -8px;
+    left: -10px;
+  }
+  
+  .eyebrow {
+    width: 15px;
+    height: 2px;
+    top: 25px;
+  }
+  
+  .eyebrow.left { left: 15px; }
+  .eyebrow.right { right: 15px; }
+  
+  .eye {
+    width: 12px;
+    height: 8px;
+    top: 30px;
+  }
+  
+  .eye.left { left: 18px; }
+  .eye.right { right: 18px; }
+  
+  .nose {
+    width: 5px;
+    height: 8px;
+    top: 42px;
+    left: 37px;
+  }
+  
+  .mouth {
+    width: 20px;
+    height: 10px;
+    top: 55px;
+    left: 30px;
+  }
+  
+  .upper-lip {
+    width: 20px;
+    height: 5px;
+  }
+  
+  .lower-lip {
+    width: 18px;
+    height: 6px;
+  }
+  
+  .chin {
+    width: 40px;
+    height: 20px;
+    bottom: -5px;
+    left: 20px;
+  }
+  
+  .neck {
+    width: 25px;
+    height: 40px;
+    bottom: 25px;
+    left: 47px;
+  }
+  
+  .shoulders {
+    width: 100px;
+    height: 50px;
+    bottom: 0;
+    left: 10px;
+  }
+  
+  .blazer {
+    height: 40px;
+  }
+  
+  .shirt {
+    width: 50px;
+    height: 25px;
+    top: 8px;
+    left: 25px;
+  }
+  
+  .interviewer-name {
+    font-size: 16px;
+  }
+  
+  .interviewer-title {
+    font-size: 12px;
+  }
+  
+  .interviewer-status {
+    font-size: 11px;
+  }
+  
+  .mute-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+    top: 15px;
+    right: 15px;
+  }
+  
+  .question-section {
+    padding: 15px;
+  }
+  
+  .question-counter {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+  
+  .question-text {
+    font-size: 16px;
+    min-height: 100px;
+    padding: 15px;
+  }
+  
+  .answer-input {
+    min-height: 80px;
+    padding: 12px;
+    font-size: 16px;
+  }
+  
+  .controls {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px 0;
+  }
+  
+  .conversation-controls {
+    width: 100%;
+  }
+  
+  .main-controls {
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    width: 100%;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .btn-speech {
+    width: 100%;
+  }
+  
+  .conversation-hint {
+    font-size: 11px;
+    text-align: center;
+  }
+}
+
+.avatar.speaking {
+  transform: scale(1.05);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1.05); }
+  50% { transform: scale(1.1); }
+}
+
+.interviewer-name {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.interviewer-title {
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+.progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: rgba(255,255,255,0.8);
+  transition: width 0.3s ease;
+}
+
+.mute-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.mute-btn:hover {
+  background: rgba(255,255,255,0.3);
+  transform: scale(1.1);
+}
+
+.question-section {
+  flex: 1.5;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.question-header {
+  margin-bottom: 30px;
+}
+
+.question-counter {
+  background: #667eea;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.question-text {
+  font-size: 22px;
+  line-height: 1.6;
+  color: #333;
+  min-height: 120px;
+  max-height: 40vh;
+  margin-bottom: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 24px;
+  background: #667eea;
+  animation: blink 1s infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.answer-section {
+  margin-top: auto;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  flex-shrink: 0;
+  padding-bottom: 20px;
+}
+
+.answer-input {
+  width: 100%;
+  min-height: 80px;
+  max-height: 25vh;
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 16px;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.answer-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.answer-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.controls {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 10;
+  width: 100%;
+}
+
+.conversation-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.conversation-hint {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+.speech-controls {
+  display: flex;
+  justify-content: center;
+}
+
+.main-controls {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+  position: relative;
+  z-index: 5;
+  min-height: 44px;
+  line-height: 1.2;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-speech:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  animation: none;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5a6fd8;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #f8f9fa;
+  color: #333;
+  border: 2px solid #e0e0e0;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e9ecef;
+}
+
+.btn-speech {
+  background: linear-gradient(45deg, #dc3545, #c82333);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-speech:hover:not(:disabled) {
+  background: linear-gradient(45deg, #c82333, #a71e2a);
+  transform: translateY(-2px);
+}
+
+.btn-speech.listening {
+  background: linear-gradient(45deg, #28a745, #20c997);
+  animation: pulse-recording 1.5s infinite;
+}
+
+.btn-speech.listening:hover {
+  background: linear-gradient(45deg, #20c997, #17a2b8);
+}
+
+@keyframes pulse-recording {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.interviewer-status {
+  font-size: 14px;
+  opacity: 0.9;
+  font-weight: 500;
+  margin-bottom: 15px;
+  margin-top: 10px;
+}
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.8);
+}
+
+.typing-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.typing-dots span {
+  width: 4px;
+  height: 4px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 50%;
+  animation: typingDots 1.4s infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingDots {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-8px); opacity: 1; }
+}

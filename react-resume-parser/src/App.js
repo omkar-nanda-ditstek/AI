@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
+import Interview from "./Interview";
 import "./App.css";
 
 function App() {
@@ -546,62 +547,15 @@ function App() {
           </div>
         )}
 
-        {/* Fullscreen Interview */}
+        {/* Interview Component */}
         {interviewStarted && (
           <div className="interview-fullscreen">
-            <div className="interview-container">
-              <div className="interview-header">
-                <h2>📝 Interview in Progress</h2>
-                <div className="interview-progress">
-                  <span>Question {currentQuestion + 1} of {result.data.questions?.length}</span>
-                  <div className="progress-bar-interview">
-                    <div 
-                      className="progress-fill-interview" 
-                      style={{ width: `${((currentQuestion + 1) / result.data.questions?.length) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="interview-content">
-                <div className="question-container">
-                  <div className="question-number-large">
-                    Q{currentQuestion + 1}
-                  </div>
-                  <div className="question-text-large">
-                    {result.data.questions[currentQuestion]?.question}
-                  </div>
-                  <div className="question-type-large">
-                    {result.data.questions[currentQuestion]?.type}
-                  </div>
-                </div>
-                
-                <div className="answer-container">
-                  <textarea
-                    className="answer-input-large"
-                    value={currentAnswer}
-                    onChange={(e) => setCurrentAnswer(e.target.value)}
-                    placeholder="Type your answer here..."
-                    rows={8}
-                    onCopy={preventRightClick}
-                    onPaste={preventRightClick}
-                    onCut={preventRightClick}
-                  />
-                  
-                  <div className="interview-controls-large">
-                    <button
-                      className="next-btn-large"
-                      onClick={nextQuestion}
-                      disabled={!currentAnswer.trim()}
-                    >
-                      {currentQuestion < result.data.questions.length - 1
-                        ? "Next Question →"
-                        : "Finish Interview ✓"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Interview 
+              questions={result.data.questions}
+              sessionId={result.data.session_id}
+              resumeId={result.data.resume_id}
+              onComplete={submitInterview}
+            />
           </div>
         )}
 

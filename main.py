@@ -50,6 +50,10 @@ class InterviewSession(BaseModel):
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/interview", response_class=HTMLResponse)
+async def interview_page(request: Request):
+    return templates.TemplateResponse("interview.html", {"request": request})
+
 @app.post("/upload-resume")
 async def upload_resume(file: UploadFile = File(...)):
     try:
