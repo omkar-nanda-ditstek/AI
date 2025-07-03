@@ -314,6 +314,87 @@ async def update_skills(resume_id: str, skills_data: SkillsUpdate):
             "path": f"/update-skills/{resume_id}"
         }
 
+class InterviewResponse(BaseModel):
+    question_id: str
+    answer: str
+
+class InterviewSubmission(BaseModel):
+    session_id: str
+    resume_id: str
+    responses: List[InterviewResponse]
+
+@app.post("/submit-interview")
+async def submit_interview(interview_data: dict):
+    """Submit interview responses and save to database"""
+    try:
+        from bson import ObjectId
+        print(f"Received interview data: {interview_data}")
+        
+        session_id = interview_data.get('session_id')
+        resume_id = interview_data.get('resume_id')
+        responses = interview_data.get('responses', [])
+        
+        if not session_id or not resume_id or not responses:
+            return {
+                "success": False,
+                "message": "Missing required fields: session_id, resume_id, or responses"
+            }
+        
+        # Calculate basic score
+        total_questions = len(responses)
+        answered_questions = sum(1 for response in responses if response.get('answer', '').strip())
+        score = round((answered_questions / total_questions) * 100) if total_questions > 0 else 0
+        
+        # Create interview document
+        interview_doc = {
+            "session_id": session_id,
+            "resume_id": ObjectId(resume_id),
+            "responses": responses,
+            "score": score,
+            "total_questions": total_questions,
+            "answered_questions": answered_questions,
+            "submitted_at": datetime.utcnow(),
+            "created_at": datetime.utcnow()
+        }
+        
+        # Save to interviews collection
+        result = db_manager.db.interviews.insert_one(interview_doc)
+        interview_id = str(result.inserted_id)
+        
+        # Update resume document with interview reference
+        db_manager.db.resumes.update_one(
+            {"_id": ObjectId(resume_id)},
+            {
+                "$set": {
+                    "interview_id": ObjectId(interview_id),
+                    "interview_score": score,
+                    "interview_completed": True,
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": "Interview submitted successfully",
+            "score": score,
+            "data": {
+                "interview_id": interview_id,
+                "score": score,
+                "total_questions": total_questions,
+                "answered_questions": answered_questions
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error submitting interview: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "success": False,
+            "message": f"Error submitting interview: {str(e)}"
+        }
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

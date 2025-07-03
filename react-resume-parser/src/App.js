@@ -16,11 +16,42 @@ function App() {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [userSkills, setUserSkills] = useState([]);
   const [availableSkills] = useState([
-    'JavaScript', 'Python', 'Java', 'C++', 'React', 'Node.js', 'Angular', 'Vue.js',
-    'HTML', 'CSS', 'MongoDB', 'MySQL', 'PostgreSQL', 'AWS', 'Docker', 'Kubernetes',
-    'Git', 'Linux', 'TypeScript', 'PHP', 'Ruby', 'Go', 'Swift', 'Kotlin',
-    'Django', 'Flask', 'Express.js', 'Spring Boot', 'Laravel', 'Rails',
-    'Redux', 'GraphQL', 'REST API', 'Microservices', 'DevOps', 'CI/CD'
+    "JavaScript",
+    "Python",
+    "Java",
+    "C++",
+    "React",
+    "Node.js",
+    "Angular",
+    "Vue.js",
+    "HTML",
+    "CSS",
+    "MongoDB",
+    "MySQL",
+    "PostgreSQL",
+    "AWS",
+    "Docker",
+    "Kubernetes",
+    "Git",
+    "Linux",
+    "TypeScript",
+    "PHP",
+    "Ruby",
+    "Go",
+    "Swift",
+    "Kotlin",
+    "Django",
+    "Flask",
+    "Express.js",
+    "Spring Boot",
+    "Laravel",
+    "Rails",
+    "Redux",
+    "GraphQL",
+    "REST API",
+    "Microservices",
+    "DevOps",
+    "CI/CD",
   ]);
   const fileInputRef = useRef(null);
 
@@ -79,7 +110,7 @@ function App() {
       if (response.data.success) {
         setResult(response.data);
         setUploadProgress(100);
-        console.log('Resume uploaded with ID:', response.data.data.resume_id);
+        console.log("Resume uploaded with ID:", response.data.data.resume_id);
       } else {
         setError(response.data.message);
       }
@@ -107,7 +138,7 @@ function App() {
   };
 
   const openSkillsModal = () => {
-    setUserSkills(result.data.parsed_resume.skills || []);
+    setUserSkills([...result.data.parsed_resume.skills] || []);
     setShowSkillsModal(true);
   };
 
@@ -117,66 +148,76 @@ function App() {
 
   const toggleSkill = (skill) => {
     // Update UI immediately for better UX
-    setUserSkills(prev => 
-      prev.includes(skill) 
-        ? prev.filter(s => s !== skill)
-        : [...prev, skill]
+    setUserSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
     );
   };
 
   const removeSkill = async (skill) => {
     try {
-      const response = await axios.delete(`http://localhost:8000/remove-skill/${result.data.resume_id}`, {
-        data: { skill: skill }
-      });
-      
+      const response = await axios.delete(
+        `http://localhost:8000/remove-skill/${result.data.resume_id}`,
+        {
+          data: { skill: skill },
+        }
+      );
+
       if (response.data.success) {
         // Update main result state
-        setResult(prev => ({
+        setResult((prev) => ({
           ...prev,
           data: {
             ...prev.data,
             parsed_resume: {
               ...prev.data.parsed_resume,
-              skills: prev.data.parsed_resume.skills.filter(s => s !== skill)
-            }
-          }
+              skills: prev.data.parsed_resume.skills.filter((s) => s !== skill),
+            },
+          },
         }));
         alert(`Skill '${skill}' removed successfully!`);
       } else {
         alert(`Error: ${response.data.message}`);
       }
     } catch (err) {
-      console.error('Error removing skill:', err);
-      alert(`Error removing skill: ${err.response?.data?.message || err.message}`);
+      console.error("Error removing skill:", err);
+      alert(
+        `Error removing skill: ${err.response?.data?.message || err.message}`
+      );
     }
   };
 
+
+
   const saveSkills = async () => {
     try {
-      const response = await axios.put(`http://localhost:8000/update-skills/${result.data.resume_id}`, {
-        skills: userSkills
-      });
-      
+      const response = await axios.put(
+        `http://localhost:8000/update-skills/${result.data.resume_id}`,
+        {
+          skills: userSkills,
+        }
+      );
+
       if (response.data.success) {
-        setResult(prev => ({
+        setResult((prev) => ({
           ...prev,
           data: {
             ...prev.data,
             parsed_resume: {
               ...prev.data.parsed_resume,
-              skills: userSkills
-            }
-          }
+              skills: userSkills,
+            },
+          },
         }));
         setShowSkillsModal(false);
-        alert('Skills updated successfully!');
+        alert("Skills updated successfully!");
       } else {
         alert(`Error: ${response.data.message}`);
       }
     } catch (err) {
-      console.error('Error updating skills:', err);
-      alert(`Error updating skills: ${err.response?.data?.message || err.message}`);
+      console.error("Error updating skills:", err);
+      alert(
+        `Error updating skills: ${err.response?.data?.message || err.message}`
+      );
     }
   };
 
@@ -185,6 +226,38 @@ function App() {
     setCurrentQuestion(0);
     setAnswers([]);
     setCurrentAnswer("");
+    
+    // Disable copy-paste and right-click
+    document.addEventListener('contextmenu', preventRightClick);
+    document.addEventListener('keydown', preventCopyPaste);
+    document.addEventListener('selectstart', preventSelection);
+    document.addEventListener('dragstart', preventDrag);
+  };
+
+  const preventRightClick = (e) => {
+    e.preventDefault();
+    return false;
+  };
+
+  const preventCopyPaste = (e) => {
+    if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a')) {
+      e.preventDefault();
+      return false;
+    }
+    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  const preventSelection = (e) => {
+    e.preventDefault();
+    return false;
+  };
+
+  const preventDrag = (e) => {
+    e.preventDefault();
+    return false;
   };
 
   const nextQuestion = () => {
@@ -208,30 +281,53 @@ function App() {
 
   const submitInterview = async (finalAnswers) => {
     try {
+      console.log('Submitting interview:', {
+        session_id: result.data.session_id,
+        resume_id: result.data.resume_id,
+        responses: finalAnswers
+      });
+      
       const response = await axios.post(
         "http://localhost:8000/submit-interview",
         {
           session_id: result.data.session_id,
+          resume_id: result.data.resume_id,
           responses: finalAnswers,
         }
       );
 
-      alert(`Interview completed! Score: ${response.data.score}`);
-      setInterviewStarted(false);
+      console.log('Interview response:', response.data);
+      const score = response.data.data?.score || response.data.score || 0;
+      alert(`Interview completed! Score: ${score}%`);
+      endInterview();
     } catch (err) {
       console.error("Error submitting interview:", err);
-      alert("Error submitting interview");
+      console.error("Error response:", err.response?.data);
+      alert(`Error submitting interview: ${err.response?.data?.message || err.message}`);
+      endInterview();
     }
   };
 
+  const endInterview = () => {
+    setInterviewStarted(false);
+    
+    // Re-enable copy-paste and right-click
+    document.removeEventListener('contextmenu', preventRightClick);
+    document.removeEventListener('keydown', preventCopyPaste);
+    document.removeEventListener('selectstart', preventSelection);
+    document.removeEventListener('dragstart', preventDrag);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <div className="header-content">
-          <h1>🤖 Resume Parser AI</h1>
-          <p>Upload your resume and get instant AI-powered analysis</p>
-        </div>
-      </header>
+    <div className={`App ${interviewStarted ? 'interview-mode' : ''}`}>
+      {!interviewStarted && (
+        <header className="App-header">
+          <div className="header-content">
+            <h1>🤖 Resume Parser AI</h1>
+            <p>Upload your resume and get instant AI-powered analysis</p>
+          </div>
+        </header>
+      )}
 
       <div className="main-content">
         <div
@@ -371,8 +467,8 @@ function App() {
               <div className="card skills-section">
                 <div className="card-header">
                   <h3>🛠️ Skills</h3>
-                  <button className="add-skills-btn" onClick={openSkillsModal}>
-                    ➕ Manage Skills
+                  <button className="edit-skills-btn" onClick={openSkillsModal}>
+                    ✏️ Edit Skills
                   </button>
                 </div>
                 <div className="skills-container">
@@ -380,7 +476,7 @@ function App() {
                     result.data.parsed_resume.skills.map((skill, index) => (
                       <span key={index} className="skill-tag removable">
                         {skill}
-                        <button 
+                        <button
                           className="remove-skill-btn"
                           onClick={() => removeSkill(skill)}
                           title="Remove skill"
@@ -409,74 +505,119 @@ function App() {
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div className="card interview-active">
-                  <div className="card-header">
-                    <h3>📝 Interview in Progress</h3>
-                    <p>
-                      Question {currentQuestion + 1} of{" "}
-                      {result.data.questions?.length}
-                    </p>
-                  </div>
-                  <div className="question-display">
-                    <div className="question-number">
-                      Q{currentQuestion + 1}
-                    </div>
-                    <div className="question-text">
-                      {result.data.questions[currentQuestion]?.question}
-                    </div>
-                    <div className="question-type">
-                      {result.data.questions[currentQuestion]?.type}
-                    </div>
-                    <textarea
-                      className="answer-input"
-                      value={currentAnswer}
-                      onChange={(e) => setCurrentAnswer(e.target.value)}
-                      placeholder="Type your answer here..."
-                      rows={4}
-                    />
-                    <div className="interview-controls">
-                      <button
-                        className="next-btn"
-                        onClick={nextQuestion}
-                        disabled={!currentAnswer.trim()}
-                      >
-                        {currentQuestion < result.data.questions.length - 1
-                          ? "Next Question"
-                          : "Finish Interview"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              ) : null}
             </div>
-
-
           </div>
         )}
-        
+
+        {/* Fullscreen Interview */}
+        {interviewStarted && (
+          <div className="interview-fullscreen">
+            <div className="interview-container">
+              <div className="interview-header">
+                <h2>📝 Interview in Progress</h2>
+                <div className="interview-progress">
+                  <span>Question {currentQuestion + 1} of {result.data.questions?.length}</span>
+                  <div className="progress-bar-interview">
+                    <div 
+                      className="progress-fill-interview" 
+                      style={{ width: `${((currentQuestion + 1) / result.data.questions?.length) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="interview-content">
+                <div className="question-container">
+                  <div className="question-number-large">
+                    Q{currentQuestion + 1}
+                  </div>
+                  <div className="question-text-large">
+                    {result.data.questions[currentQuestion]?.question}
+                  </div>
+                  <div className="question-type-large">
+                    {result.data.questions[currentQuestion]?.type}
+                  </div>
+                </div>
+                
+                <div className="answer-container">
+                  <textarea
+                    className="answer-input-large"
+                    value={currentAnswer}
+                    onChange={(e) => setCurrentAnswer(e.target.value)}
+                    placeholder="Type your answer here..."
+                    rows={8}
+                    onCopy={preventRightClick}
+                    onPaste={preventRightClick}
+                    onCut={preventRightClick}
+                  />
+                  
+                  <div className="interview-controls-large">
+                    <button
+                      className="next-btn-large"
+                      onClick={nextQuestion}
+                      disabled={!currentAnswer.trim()}
+                    >
+                      {currentQuestion < result.data.questions.length - 1
+                        ? "Next Question →"
+                        : "Finish Interview ✓"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Skills Modal */}
         {showSkillsModal && (
           <div className="modal-overlay" onClick={closeSkillsModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>🛠️ Manage Skills</h3>
-                <button className="modal-close" onClick={closeSkillsModal}>✕</button>
+                <button className="modal-close" onClick={closeSkillsModal}>
+                  ✕
+                </button>
               </div>
               <div className="modal-body">
-                <div className="skills-grid">
-                  {availableSkills.map((skill, index) => (
-                    <div 
-                      key={index} 
-                      className={`skill-option ${userSkills.includes(skill) ? 'selected' : ''}`}
-                      onClick={() => toggleSkill(skill)}
-                    >
-                      <span className="skill-name">{skill}</span>
-                      <span className="skill-toggle">
-                        {userSkills.includes(skill) ? '✓' : '+'}
-                      </span>
-                    </div>
-                  ))}
+                <div className="skills-section">
+                  <h4>📋 Current Skills</h4>
+                  <div className="current-skills">
+                    {userSkills.length > 0 ? (
+                      userSkills.map((skill, index) => (
+                        <div key={index} className="current-skill-item">
+                          <span className="skill-name">{skill}</span>
+                          <button
+                            className="remove-current-skill"
+                            onClick={() => toggleSkill(skill)}
+                            title="Remove skill"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="no-skills">No skills selected</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="skills-section">
+                  <h4>➕ Add Skills</h4>
+                  <div className="available-skills">
+                    {availableSkills
+                      .filter((skill) => !userSkills.includes(skill))
+                      .map((skill, index) => (
+                        <div
+                          key={index}
+                          className="available-skill-item"
+                          onClick={() => toggleSkill(skill)}
+                        >
+                          <span className="skill-name">{skill}</span>
+                          <span className="add-skill-btn">+</span>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               </div>
               <div className="modal-footer">
