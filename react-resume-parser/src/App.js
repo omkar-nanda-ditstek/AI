@@ -281,29 +281,55 @@ function App() {
 
   const submitInterview = async (finalAnswers) => {
     try {
-      console.log('Submitting interview:', {
+      console.log('=== SUBMITTING INTERVIEW ===');
+      console.log('Session ID:', result.data.session_id);
+      console.log('Resume ID:', result.data.resume_id);
+      console.log('Responses:', finalAnswers);
+      
+      const requestData = {
         session_id: result.data.session_id,
         resume_id: result.data.resume_id,
-        responses: finalAnswers
-      });
+        responses: finalAnswers,
+      };
+      
+      console.log('Request data:', requestData);
       
       const response = await axios.post(
         "http://localhost:8000/submit-interview",
+        requestData,
         {
-          session_id: result.data.session_id,
-          resume_id: result.data.resume_id,
-          responses: finalAnswers,
+          timeout: 30000, // 30 second timeout
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
       );
 
-      console.log('Interview response:', response.data);
-      const score = response.data.data?.score || response.data.score || 0;
-      alert(`Interview completed! Score: ${score}%`);
+      console.log('=== RESPONSE RECEIVED ===');
+      console.log('Full response:', response);
+      console.log('Response data:', response.data);
+      
+      if (response.data.success) {
+        const score = response.data.score || 0;
+        alert(`Interview completed! Score: ${score}%`);
+      } else {
+        alert(`Error: ${response.data.message}`);
+      }
+      
       endInterview();
     } catch (err) {
-      console.error("Error submitting interview:", err);
-      console.error("Error response:", err.response?.data);
-      alert(`Error submitting interview: ${err.response?.data?.message || err.message}`);
+      console.error('=== ERROR SUBMITTING INTERVIEW ===');
+      console.error('Error object:', err);
+      console.error('Error message:', err.message);
+      console.error('Error response:', err.response);
+      console.error('Error response data:', err.response?.data);
+      
+      if (err.code === 'ECONNABORTED') {
+        alert('Request timeout - please try again');
+      } else {
+        alert(`Error submitting interview: ${err.response?.data?.message || err.message}`);
+      }
+      
       endInterview();
     }
   };
