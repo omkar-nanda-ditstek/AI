@@ -99,7 +99,7 @@ async def create_interview_collection():
         print("     * answer: String")
         print("     * answer_length: Number")
         print("     * time_taken: Number (seconds)")
-        print("   - score: Number (0-100)")
+        # print("   - score: Number (0-100)")
         print("   - total_questions: Number")
         print("   - answered_questions: Number")
         print("   - completion_rate: Number (percentage)")

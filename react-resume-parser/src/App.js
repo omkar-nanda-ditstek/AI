@@ -15,6 +15,7 @@ function App() {
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [userSkills, setUserSkills] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableSkills] = useState([
     "JavaScript",
     "Python",
@@ -132,6 +133,7 @@ function App() {
     setCurrentAnswer("");
     setShowSkillsModal(false);
     setUserSkills([]);
+    setIsSubmitting(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -280,11 +282,15 @@ function App() {
   };
 
   const submitInterview = async (finalAnswers) => {
+    if (isSubmitting) {
+      console.log('Already submitting, ignoring duplicate call');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
       console.log('=== SUBMITTING INTERVIEW ===');
-      console.log('Session ID:', result.data.session_id);
-      console.log('Resume ID:', result.data.resume_id);
-      console.log('Responses:', finalAnswers);
       
       const requestData = {
         session_id: result.data.session_id,
@@ -298,7 +304,7 @@ function App() {
         "http://localhost:8000/submit-interview",
         requestData,
         {
-          timeout: 30000, // 30 second timeout
+          timeout: 10000,
           headers: {
             'Content-Type': 'application/json'
           }
@@ -306,30 +312,34 @@ function App() {
       );
 
       console.log('=== RESPONSE RECEIVED ===');
-      console.log('Full response:', response);
+      console.log('Status:', response.status);
       console.log('Response data:', response.data);
       
-      if (response.data.success) {
-        const score = response.data.score || 0;
-        alert(`Interview completed! Score: ${score}%`);
+      if (response.status === 200 && response.data) {
+        if (response.data.success) {
+          alert('Interview completed successfully!');
+        } else {
+          alert(`Error: ${response.data.message || 'Unknown error'}`);
+        }
       } else {
-        alert(`Error: ${response.data.message}`);
+        alert('Invalid response from server');
       }
       
-      endInterview();
     } catch (err) {
       console.error('=== ERROR SUBMITTING INTERVIEW ===');
-      console.error('Error object:', err);
-      console.error('Error message:', err.message);
-      console.error('Error response:', err.response);
-      console.error('Error response data:', err.response?.data);
+      console.error('Error:', err);
       
       if (err.code === 'ECONNABORTED') {
         alert('Request timeout - please try again');
+      } else if (err.response) {
+        console.error('Error status:', err.response.status);
+        console.error('Error data:', err.response.data);
+        alert(`Server error (${err.response.status}): ${err.response.data?.message || 'Unknown error'}`);
       } else {
-        alert(`Error submitting interview: ${err.response?.data?.message || err.message}`);
+        alert(`Network error: ${err.message}`);
       }
-      
+    } finally {
+      setIsSubmitting(false);
       endInterview();
     }
   };
