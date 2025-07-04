@@ -1,18 +1,20 @@
 from typing import Dict, List
-from openai import OpenAI
 import os
 from datetime import datetime
+from custom_trainer import CustomInterviewTrainer
 
 class QuestionGenerator:
-    def __init__(self):
-        # Initialize OpenAI client with API key
-        api_key = os.getenv('OPENAI_API_KEY')
-        if api_key and api_key != 'your-api-key-here':
-            self.client = OpenAI(api_key=api_key)
-            print("OpenAI API key loaded successfully")
+    def __init__(self, ai_manager=None):
+        self.ai_manager = ai_manager
+        self.custom_trainer = CustomInterviewTrainer()
+        if not ai_manager:
+            # Fallback for backward compatibility
+            from ai_providers import AIManager
+            provider = os.getenv('AI_PROVIDER', 'ollama')
+            self.ai_manager = AIManager(provider)
+            print(f"Initialized AI provider: {provider}")
         else:
-            print("ERROR: No OpenAI API key found! Please set OPENAI_API_KEY environment variable.")
-            self.client = None
+            print("Using provided AI manager")
         
         # 30-minute interview structure (6 questions, 5 minutes each)
         self.interview_structure = [
@@ -33,156 +35,333 @@ class QuestionGenerator:
         
         print(f"Candidate: {name}, Skills: {skills}, Experience: {experience}")
         
-        # Try AI first, fallback to demo questions
-        if self.client:
-            try:
-                prompt = self._create_ai_prompt(name, skills, experience)
-                print("Generated AI prompt, calling OpenAI...")
-                ai_questions = self._generate_ai_questions(prompt)
+        try:
+            questions = self.ai_manager.generate_questions(
+                f"Name: {name}\nSkills: {', '.join(skills)}\nExperience: {experience}", 
+                num_questions=6
+            )
+            
+            # Format questions for the interview system
+            formatted_questions = []
+            phases = ["introduction", "basics", "basics", "technical", "technical", "advanced"]
+            
+            for i, question in enumerate(questions):
+                formatted_questions.append({
+                    "id": f"{phases[i]}_{i+1}",
+                    "type": phases[i],
+                    "question": question,
+                    "duration": 5
+                })
+            
+            print(f"Successfully generated {len(formatted_questions)} AI questions")
+            return formatted_questions
                 
-                if ai_questions and len(ai_questions) >= 6:
-                    print(f"Successfully generated {len(ai_questions)} AI questions")
-                    return ai_questions
-            except Exception as e:
-                print(f"OpenAI API failed: {str(e)}")
-                print("Falling back to demo questions...")
-        
-        # Fallback to demo questions
-        return self._generate_demo_questions(resume_data)
+        except Exception as e:
+            print(f"AI generation failed: {str(e)}")
+            raise Exception(f"Failed to generate AI questions: {str(e)}")
     
-    def _create_ai_prompt(self, name: str, skills: List[str], experience: str) -> str:
-        """Create AI prompt for question generation"""
-        skills_text = ", ".join(skills[:5]) if skills else "general programming"
+    
+
+    
+
+    
+    def generate_next_question(self, resume_data: Dict, conversation_history: List[Dict], current_question_index: int) -> Dict:
+        """Generate the next question based on conversation history and resume skills"""
+        
+        try:
+            skills = resume_data.get('skills', [])
+            name = resume_data.get('name', 'Candidate')
+            phase = self._determine_interview_phase(current_question_index)
+            
+            # Try custom training data first
+            custom_question = self.custom_trainer.generate_custom_question(skills, conversation_history)
+            
+            # If custom training has specific question, use it
+            if custom_question != "Tell me about your technical experience and projects you've worked on.":
+                return {
+                    "id": f"{phase}_{current_question_index + 1}",
+                    "type": phase,
+                    "question": custom_question,
+                    "duration": 5
+                }
+            
+            # Otherwise use AI generation
+            context = self._build_conversation_context(resume_data, conversation_history)
+            prompt = self._create_skill_focused_prompt(name, skills, context, phase, current_question_index)
+            ai_response = self.ai_manager.generate_contextual_question(prompt)
+            
+            return {
+                "id": f"{phase}_{current_question_index + 1}",
+                "type": phase,
+                "question": ai_response,
+                "duration": 5
+            }
+            
+        except Exception as e:
+            print(f"Error generating question: {str(e)}")
+            raise Exception(f"Failed to generate question: {str(e)}")
+    
+    def _create_skill_focused_prompt(self, name: str, skills: List[str], context: str, phase: str, question_index: int) -> str:
+        """Create AI prompt focused on resume skills and projects"""
+        
+        skills_text = ', '.join(skills) if skills else 'general programming'
+        
+        phase_focus = {
+            "introduction": "basic background and introduction to their skills",
+            "basics": f"fundamental concepts in {skills_text}",
+            "technical": f"practical experience and projects using {skills_text}",
+            "advanced": f"advanced problem-solving and system design with {skills_text}"
+        }
         
         prompt = f"""
-You are an experienced, friendly technical interviewer conducting a 30-minute interview with {name}. Generate 6 conversational, human-like questions that feel natural and engaging.
+You are Sarah, a friendly technical interviewer. Generate ONE natural conversational question for {name}.
 
-Candidate Profile:
-- Name: {name}
-- Skills: {skills_text}
-- Experience: {experience}
+RESUME SKILLS: {skills_text}
 
-Interview Flow (30 minutes total):
-1. Warm Introduction (5 min) - 1 question: Personal, welcoming introduction
-2. Technical Foundation (10 min) - 2 questions: Core concepts with personal touch
-3. Practical Experience (10 min) - 2 questions: Real-world scenarios and projects
-4. Problem Solving (5 min) - 1 question: Thoughtful challenge or design question
+CONVERSATION CONTEXT:
+{context}
 
-Question Style Requirements:
-- Sound like a human interviewer, not robotic
-- Use conversational language ("I'd love to hear about...", "That's interesting...", "Could you walk me through...")
-- Show genuine interest and curiosity
-- Reference their specific skills naturally
-- Use their name appropriately
-- Ask follow-up style questions
-- Make them feel comfortable and engaged
-- Avoid generic corporate speak
+CURRENT PHASE: {phase_focus.get(phase, phase)} (Question {question_index + 1})
 
-Return ONLY a JSON array with this exact format:
-[
-  {{"id": "intro_1", "type": "introduction", "question": "Hi {name}! Thanks for taking the time to speak with me today. I'm excited to learn more about you. Could you start by telling me about your journey into software development and what initially sparked your interest?", "duration": 5}},
-  {{"id": "basic_1", "type": "basics", "question": "...", "duration": 5}},
-  {{"id": "basic_2", "type": "basics", "question": "...", "duration": 5}},
-  {{"id": "tech_1", "type": "technical", "question": "...", "duration": 5}},
-  {{"id": "tech_2", "type": "technical", "question": "...", "duration": 5}},
-  {{"id": "advanced_1", "type": "advanced", "question": "...", "duration": 5}}
-]
+QUESTION REQUIREMENTS:
+1. Focus on their resume skills: {skills_text}
+2. Ask about specific projects they've worked on
+3. Be conversational and friendly
+4. Reference their previous answers naturally
+5. Ask for concrete examples and experiences
+
+EXAMPLE QUESTION TYPES:
+- "Can you tell me about a project where you used [specific skill]?"
+- "What challenges did you face when working with [technology from resume]?"
+- "How did you implement [feature] in your [project type] projects?"
+- "What's your experience with [skill from resume]?"
+
+Generate only the question text, no JSON or formatting.
 """
         return prompt
     
-    def _generate_ai_questions(self, prompt: str) -> List[Dict]:
-        """Generate questions using OpenAI API"""
-        print("Calling OpenAI API...")
-        
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a warm, experienced technical interviewer who makes candidates feel comfortable while asking insightful questions. Generate natural, conversational interview questions that sound human and engaging. Return only valid JSON array without markdown formatting."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=2000,
-            temperature=0.8
-        )
-        
-        print("OpenAI API response received")
-        
-        # Extract and parse JSON response
-        content = response.choices[0].message.content.strip()
-        print(f"Raw AI response: {content}")
-        
-        # Clean up response (remove markdown formatting if present)
-        if content.startswith('```json'):
-            content = content[7:-3].strip()
-        elif content.startswith('```'):
-            content = content[3:-3].strip()
-        
-        import json
-        questions = json.loads(content)
-        
-        # Validate questions format
-        if not isinstance(questions, list) or len(questions) < 6:
-            raise Exception(f"Invalid AI response: expected 6 questions, got {len(questions) if isinstance(questions, list) else 'invalid format'}")
-        
-        # Validate each question has required fields
-        for i, q in enumerate(questions):
-            if not all(key in q for key in ['id', 'type', 'question', 'duration']):
-                raise Exception(f"Question {i+1} missing required fields: {q}")
-        
-        print(f"Successfully validated {len(questions)} AI questions")
-        return questions
-    
-    def _generate_demo_questions(self, resume_data: Dict) -> List[Dict]:
-        """Generate human-like conversational questions when AI is not available"""
-        skills = resume_data.get('skills', [])
-        primary_skill = skills[0] if skills else "programming"
-        secondary_skill = skills[1] if len(skills) > 1 else "development"
-        name = resume_data.get('name', 'Candidate')
-        experience = resume_data.get('experience', [])
-        
-        # Get years of experience if available
-        exp_years = "a few years" 
-        if experience and len(experience) > 0:
-            exp_years = f"{len(experience)} years"
-        
-        questions = [
-            {
-                "id": "intro_1",
-                "type": "introduction", 
-                "question": f"Hi {name}! Thanks for taking the time to speak with me today. I'm excited to learn more about you. Could you start by telling me a bit about yourself and what drew you to software development? I'd love to hear about your journey so far.",
-                "duration": 5
-            },
-            {
-                "id": "basic_1",
-                "type": "basics",
-                "question": f"That's great! I can see from your resume that you have experience with {primary_skill}. What initially attracted you to this technology, and how has your relationship with it evolved over time? Are there particular aspects of {primary_skill} that you find most enjoyable or challenging?",
-                "duration": 5
-            },
-            {
-                "id": "basic_2", 
-                "type": "basics",
-                "question": "We all know that debugging can be both frustrating and rewarding. I'm curious about your approach - when you're faced with a particularly stubborn bug that's not immediately obvious, what's your thought process? Could you walk me through how you typically tackle these situations?",
-                "duration": 5
-            },
-            {
-                "id": "tech_1",
-                "type": "technical",
-                "question": f"I'd love to hear about a specific project you've worked on that you're particularly proud of. Could you tell me about something you built using {primary_skill} or {secondary_skill}? What made this project interesting or challenging for you, and how did you overcome any obstacles you encountered?",
-                "duration": 5
-            },
-            {
-                "id": "tech_2",
-                "type": "technical", 
-                "question": f"Performance optimization is always an interesting topic. Imagine you're working on a {primary_skill} application that's starting to slow down as it gains more users. What would be your systematic approach to identifying and addressing performance bottlenecks? What tools or techniques would you reach for first?",
-                "duration": 5
-            },
-            {
-                "id": "advanced_1",
-                "type": "advanced",
-                "question": "Here's a fun challenge to wrap up - let's say you're tasked with designing a system that needs to handle a million concurrent users. I'm not looking for a perfect solution, but I'm curious about your thought process. How would you approach this problem? What are the key considerations you'd think about first?",
-                "duration": 5
-            }
+    def _get_fallback_question(self, index: int) -> Dict:
+        """Fallback questions when generation fails"""
+        fallback_questions = [
+            "What technologies are you most passionate about working with?",
+            "Can you describe a challenging problem you've solved recently?",
+            "How do you stay updated with new technologies and trends?",
+            "What's your approach to collaborating with team members?",
+            "Where do you see yourself growing as a developer?"
         ]
         
-        print(f"Using personalized conversational questions for {name} ({exp_years} experience with {primary_skill})")
-        return questions
+        question = fallback_questions[min(index, len(fallback_questions)-1)]
+        
+        return {
+            "id": f"fallback_{index + 1}",
+            "type": "general",
+            "question": question,
+            "duration": 5
+        }
     
+    
+    def _build_conversation_context(self, resume_data: Dict, conversation_history: List[Dict]) -> str:
+        """Build conversation context from previous Q&A"""
+        context = f"Candidate: {resume_data.get('name', 'Candidate')}\n"
+        context += f"Skills: {', '.join(resume_data.get('skills', []))}\n\n"
+        
+        context += "Previous conversation:\n"
+        for item in conversation_history:
+            context += f"Q: {item['question']}\n"
+            context += f"A: {item['answer']}\n\n"
+        
+        return context
+    
+    def _determine_interview_phase(self, question_index: int) -> str:
+        """Determine which phase of the interview we're in for 30-minute interview"""
+        if question_index <= 2:
+            return "introduction"
+        elif question_index <= 6:
+            return "basics"
+        elif question_index <= 11:
+            return "technical"
+        else:
+            return "advanced"
+    
+    def _create_dynamic_question_prompt(self, resume_data: Dict, conversation_context: str, phase: str, question_index: int, detected_mood: str = "neutral") -> str:
+        """Create prompt for dynamic question generation with enhanced emotional intelligence"""
+        name = resume_data.get('name', 'Candidate')
+        
+        phase_descriptions = {
+            "introduction": "warm introduction and getting to know the candidate personally",
+            "basics": "fundamental technical concepts and their background", 
+            "technical": "practical experience and real-world applications",
+            "advanced": "problem-solving and system design thinking"
+        }
+        
+        # Mood-specific response guidelines
+        mood_guidelines = {
+            "negative": "Be gentle, supportive, and understanding. Show empathy and try to lift their spirits without being insensitive.",
+            "positive": "Share their enthusiasm! Be warm and encouraging. Match their positive energy.",
+            "nervous": "Be reassuring and calm. Create a safe space. Use encouraging language.",
+            "neutral": "Be warm and professional. Show genuine interest.",
+            "proud": "Acknowledge their achievement! Show genuine appreciation for their work.",
+            "uncertain": "Be patient and supportive. No pressure. Make them feel comfortable."
+        }
+        
+        prompt = f"""
+You are Sarah, a warm, empathetic, and experienced technical interviewer. You're having a natural conversation with {name}. 
+
+CRITICAL MOOD CONTEXT: The candidate's mood appears to be {detected_mood.upper()}.
+{mood_guidelines.get(detected_mood, mood_guidelines["neutral"])}
+
+Current Context:
+{conversation_context}
+
+Interview Phase: {phase_descriptions.get(phase, phase)} (Question {question_index + 1})
+
+MANDATORY EMOTIONAL MATCHING RULES:
+1. If mood is NEGATIVE/SAD: Start with empathy ("I'm sorry to hear that", "That sounds challenging")
+2. If mood is POSITIVE/HAPPY: Share enthusiasm ("That's wonderful!", "I can hear your excitement")
+3. If mood is NERVOUS/ANXIOUS: Be reassuring ("That's completely normal", "Take your time")
+4. If mood is PROUD: Celebrate with them ("That's impressive!", "You should be proud")
+5. If mood is UNCERTAIN: Be supportive ("That's perfectly okay", "No pressure at all")
+
+HUMAN CONVERSATION RULES:
+1. ALWAYS acknowledge their previous response first with appropriate emotion
+2. Show appropriate emotional response based on detected mood: {detected_mood}
+3. Ask follow-up questions that feel natural and caring
+4. Use their name occasionally but not excessively
+5. Mirror their emotional tone appropriately
+6. Be genuinely interested in their story
+7. Make it feel like talking to a friend who cares
+
+NATURAL CONVERSATION STARTERS (choose based on mood):
+- Empathetic: "I can tell that...", "That sounds like...", "I understand..."
+- Enthusiastic: "That's amazing!", "I love that!", "How exciting!"
+- Reassuring: "That's perfectly normal", "Take your time", "No worries at all"
+- Appreciative: "That's impressive", "Great work", "You should be proud"
+
+Response Format (JSON only):
+{{
+  "id": "{phase}_{question_index + 1}",
+  "type": "{phase}",
+  "question": "Your natural, emotionally appropriate response that acknowledges their mood + your follow-up question",
+  "duration": 5
+}}
+
+Remember: This is a CONVERSATION, not an interrogation. Match their emotional state appropriately!
+"""
+        return prompt
+    
+    def _detect_user_mood(self, conversation_history: List[Dict]) -> str:
+        """Detect user's mood from their last answer using keyword analysis"""
+        if not conversation_history:
+            return "neutral"
+        
+        last_answer = conversation_history[-1].get('answer', '').lower()
+        
+        # Define mood indicators
+        mood_keywords = {
+            "negative": [
+                'not good', 'bad', 'terrible', 'awful', 'stressed', 'tired', 'sad', 
+                'difficult', 'struggling', 'hard', 'tough', 'challenging', 'problem', 
+                'issue', 'disappointed', 'frustrated', 'overwhelmed', 'worried', 'down',
+                'horrible', 'worst', 'failed', 'failing', 'can\'t', 'unable', 'stuck',
+                'depressed', 'miserable', 'upset', 'angry', 'annoyed'
+            ],
+            "positive": [
+                'great', 'good', 'excellent', 'wonderful', 'amazing', 'fantastic', 
+                'happy', 'excited', 'love', 'passionate', 'enjoy', 'brilliant', 
+                'awesome', 'perfect', 'incredible', 'outstanding', 'thrilled',
+                'delighted', 'pleased', 'satisfied', 'proud', 'accomplished',
+                'successful', 'achieved', 'built', 'created'
+            ],
+            "nervous": [
+                'nervous', 'anxious', 'worried', 'scared', 'uncertain', 'unsure',
+                'hesitant', 'doubtful', 'concerned', 'apprehensive', 'intimidated',
+                'overwhelmed', 'pressure', 'stress', 'tense'
+            ],
+            "proud": [
+                'proud', 'accomplished', 'achieved', 'success', 'successful', 
+                'built', 'created', 'developed', 'implemented', 'delivered',
+                'completed', 'finished', 'solved', 'improved', 'optimized'
+            ],
+            "uncertain": [
+                'maybe', 'not sure', 'i think', 'probably', 'might', 'could be',
+                'perhaps', 'i guess', 'sort of', 'kind of', 'i suppose',
+                'not really', 'somewhat', 'partially'
+            ]
+        }
+        
+        # Count mood indicators
+        mood_scores = {}
+        for mood, keywords in mood_keywords.items():
+            score = sum(1 for keyword in keywords if keyword in last_answer)
+            if score > 0:
+                mood_scores[mood] = score
+        
+        # Return the mood with highest score, or neutral if no clear mood
+        if mood_scores:
+            detected_mood = max(mood_scores, key=mood_scores.get)
+            print(f"Mood analysis: {mood_scores} -> {detected_mood}")
+            return detected_mood
+        
+        return "neutral"
+
+    def _validate_emotional_response(self, ai_question: str, detected_mood: str) -> bool:
+        """Validate that the AI's response matches the detected mood appropriately"""
+        question_lower = ai_question.lower()
+        
+        # Define inappropriate response patterns for each mood
+        inappropriate_patterns = {
+            "negative": [
+                'fantastic', 'amazing', 'wonderful', 'excellent', 'great!', 
+                'awesome', 'brilliant', 'perfect', 'incredible', 'outstanding',
+                'thrilled', 'excited', 'love that', 'how exciting'
+            ],
+            "nervous": [
+                'that\'s fantastic', 'amazing', 'incredible', 'outstanding',
+                'you must be', 'definitely', 'obviously', 'clearly you'
+            ],
+            "uncertain": [
+                'obviously', 'clearly', 'definitely', 'you must', 'surely',
+                'of course you', 'certainly'
+            ]
+        }
+        
+        # Define required empathetic patterns for negative moods
+        required_empathy = {
+            "negative": [
+                'sorry to hear', 'understand', 'that sounds', 'i can tell',
+                'that must', 'i appreciate', 'no pressure', 'take your time',
+                'thank you for sharing', 'thank you for being open', 'thanks for sharing',
+                'i appreciate you', 'let\'s focus on', 'let\'s talk about',
+                'can you tell me about', 'would you like to share', 'how about we',
+                'what motivates you', 'what interests you', 'what drives you'
+            ],
+            "nervous": [
+                'no pressure', 'take your time', 'no worries', 'that\'s okay',
+                'perfectly normal', 'don\'t worry', 'no rush', 'at your own pace',
+                'no right or wrong', 'however you feel', 'whatever you\'re comfortable'
+            ],
+            "uncertain": [
+                'no pressure', 'take your time', 'no worries', 'that\'s okay',
+                'perfectly normal', 'don\'t worry', 'no rush', 'at your own pace',
+                'no right or wrong', 'however you feel', 'whatever you\'re comfortable',
+                'that\'s perfectly fine', 'completely understandable'
+            ]
+        }
+        
+        # Check for inappropriate responses
+        if detected_mood in inappropriate_patterns:
+            for pattern in inappropriate_patterns[detected_mood]:
+                if pattern in question_lower:
+                    print(f"Emotional validation failed: Found inappropriate '{pattern}' for {detected_mood} mood")
+                    return False
+        
+        # Check for required empathy in negative situations
+        if detected_mood in required_empathy:
+            has_empathy = any(pattern in question_lower for pattern in required_empathy[detected_mood])
+            if not has_empathy:
+                print(f"Emotional validation failed: Missing empathy for {detected_mood} mood")
+                return False
+        
+        print(f"Emotional validation passed for {detected_mood} mood")
+        return True
+

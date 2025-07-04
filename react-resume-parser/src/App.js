@@ -229,39 +229,9 @@ function App() {
     setCurrentQuestion(0);
     setAnswers([]);
     setCurrentAnswer("");
-    
-    // Disable copy-paste and right-click
-    document.addEventListener('contextmenu', preventRightClick);
-    document.addEventListener('keydown', preventCopyPaste);
-    document.addEventListener('selectstart', preventSelection);
-    document.addEventListener('dragstart', preventDrag);
   };
 
-  const preventRightClick = (e) => {
-    e.preventDefault();
-    return false;
-  };
 
-  const preventCopyPaste = (e) => {
-    if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a')) {
-      e.preventDefault();
-      return false;
-    }
-    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
-      e.preventDefault();
-      return false;
-    }
-  };
-
-  const preventSelection = (e) => {
-    e.preventDefault();
-    return false;
-  };
-
-  const preventDrag = (e) => {
-    e.preventDefault();
-    return false;
-  };
 
   const nextQuestion = () => {
     const newAnswers = [
@@ -347,12 +317,6 @@ function App() {
 
   const endInterview = () => {
     setInterviewStarted(false);
-    
-    // Re-enable copy-paste and right-click
-    document.removeEventListener('contextmenu', preventRightClick);
-    document.removeEventListener('keydown', preventCopyPaste);
-    document.removeEventListener('selectstart', preventSelection);
-    document.removeEventListener('dragstart', preventDrag);
   };
 
   return (

@@ -1,31 +1,20 @@
 import PyPDF2
 import docx
 import re
-import spacy
-from pyresparser import ResumeParser as PyResumeParser
 from typing import Dict, List
 import tempfile
 import os
-import fitz  # PyMuPDF
-from pdfminer.high_level import extract_text as pdfminer_extract
-import pdfplumber
 
 
 class ResumeParser:
     def __init__(self):
-        try:
-            self.nlp = spacy.load("en_core_web_sm")
-        except OSError:
-            self.nlp = None
+        self.nlp = None  # Simplified - no spacy dependency
     
     def parse(self, content: bytes, filename: str) -> Dict:
         text = self._extract_text(content, filename)
         
-        # Use pyresparser for structured extraction
-        parsed_data = self._parse_with_pyresparser(content, filename)
-        
-        # Enhance with spaCy NLP
-        enhanced_data = self._enhance_with_spacy(text, parsed_data)
+        # Simple parsing without external dependencies
+        enhanced_data = self._simple_parse(text)
         
         return enhanced_data
     
@@ -49,39 +38,7 @@ class ResumeParser:
         except Exception as e:
             print(f"PyPDF2 failed: {e}")
         
-        # Method 2: PyMuPDF (fitz)
-        try:
-            doc = fitz.open(stream=content, filetype="pdf")
-            text = ""
-            for page in doc:
-                text += page.get_text()
-            doc.close()
-            if text.strip():
-                print("PDF extracted with PyMuPDF")
-                return text
-        except Exception as e:
-            print(f"PyMuPDF failed: {e}")
-        
-        # Method 3: pdfminer
-        try:
-            text = pdfminer_extract(BytesIO(content))
-            if text.strip():
-                print("PDF extracted with pdfminer")
-                return text
-        except Exception as e:
-            print(f"pdfminer failed: {e}")
-        
-        # Method 4: pdfplumber
-        try:
-            with pdfplumber.open(BytesIO(content)) as pdf:
-                text = ""
-                for page in pdf.pages:
-                    text += page.extract_text() or ""
-            if text.strip():
-                print("PDF extracted with pdfplumber")
-                return text
-        except Exception as e:
-            print(f"pdfplumber failed: {e}")
+        # Simplified - only PyPDF2
         
         print("All PDF extraction methods failed")
         return ""
@@ -91,53 +48,21 @@ class ResumeParser:
         doc = docx.Document(BytesIO(content))
         return '\n'.join(paragraph.text for paragraph in doc.paragraphs)
     
-    def _parse_with_pyresparser(self, content: bytes, filename: str) -> Dict:
-        try:
-            with tempfile.NamedTemporaryFile(suffix=os.path.splitext(filename)[1], delete=False) as tmp:
-                tmp.write(content)
-                tmp.flush()
-                pyresparser = PyResumeParser(tmp.name)
-                data = pyresparser.get_extracted_data()
-                os.unlink(tmp.name)
-                print(f"Pyresparser extracted: {data}")
-                return data or {}
-        except Exception as e:
-            print(f"Pyresparser error: {e}")
-            return {}
-    
-    def _enhance_with_spacy(self, text: str, base_data: Dict) -> Dict:
-        print(f"Raw text preview: {text[:200]}...")
-        enhanced = {
-            "name": base_data.get('name') or self._extract_name_spacy(text),
-            "email": base_data.get('email') or self._extract_email(text),
-            "phone": base_data.get('mobile_number', '') or self._extract_phone(text),
-            "skills": base_data.get('skills', []) or self._extract_skills_spacy(text),
-            "experience": base_data.get('total_experience') or self._extract_experience(text),
-            "education": base_data.get('degree', []) or self._extract_education(text),
-            "projects": self._extract_projects_spacy(text)
+    def _simple_parse(self, text: str) -> Dict:
+        """Simple parsing without external dependencies"""
+        return {
+            "name": self._extract_name_patterns(text),
+            "email": self._extract_email(text),
+            "phone": self._extract_phone(text),
+            "skills": self._extract_skills_simple(text),
+            "experience": self._extract_experience(text),
+            "education": self._extract_education(text),
+            "projects": self._extract_projects_simple(text)
         }
-        print(f"Final enhanced data: {enhanced}")
-        return enhanced
     
-    def _extract_name_spacy(self, text: str) -> str:
-        # Try multiple extraction methods
-        
-        # Method 1: spaCy NER
-        if self.nlp:
-            doc = self.nlp(text[:1000])
-            for ent in doc.ents:
-                if (ent.label_ == "PERSON" and 
-                    len(ent.text.split()) >= 2 and 
-                    self._is_valid_name(ent.text)):
-                    return ent.text.strip()
-        
-        # Method 2: Pattern-based extraction
-        name = self._extract_name_patterns(text)
-        if name and name != "Unknown" and name != "Name not found in PDF":
-            return name
-        
-        # Method 3: Fallback
-        return self._extract_name_fallback(text)
+
+    
+
     
     def _extract_name_patterns(self, text: str) -> str:
         # Method 1: Look for names at the very beginning (first few lines)
@@ -251,7 +176,7 @@ class ResumeParser:
         
         return ""
     
-    def _extract_skills_spacy(self, text: str) -> List[str]:
+    def _extract_skills_simple(self, text: str) -> List[str]:
         # Technical skill indicators
         tech_indicators = {
             'languages': ['python', 'java', 'javascript', 'typescript', 'php', 'ruby', 'go', 'rust', 'kotlin', 'swift', 'scala'],
@@ -381,7 +306,7 @@ class ResumeParser:
         
         return "Not specified"
     
-    def _extract_projects_spacy(self, text: str) -> List[str]:
+    def _extract_projects_simple(self, text: str) -> List[str]:
         projects = []
         
         # Look for project sections with various headers

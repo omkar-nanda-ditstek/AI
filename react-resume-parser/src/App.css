@@ -1380,10 +1380,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
 }
 
 .interview-container {
@@ -1503,10 +1499,6 @@
   outline: none;
   transition: border-color 0.3s ease;
   min-height: 200px;
-  user-select: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
 }
 
 .answer-input-large:focus {

@@ -1,0 +1,112 @@
+{
+  "interview_patterns": [
+    {
+      "skill": "Node.js",
+      "questions": [
+        "Tell me about your Node.js experience and what projects you've built",
+        "How do you handle asynchronous operations in Node.js?",
+        "What's your experience with Express.js and API development?",
+        "I see you have Node.js experience. Can you walk me through a specific Node.js project you built?"
+      ],
+      "follow_ups": [
+        "Can you explain how you structured your Node.js application?",
+        "What challenges did you face with Node.js performance?"
+      ]
+    },
+    {
+      "skill": "React",
+      "questions": [
+        "Describe your React development experience",
+        "How do you manage state in React applications?",
+        "What's your approach to component design?",
+        "Tell me about your React development experience. What kind of applications have you built?"
+      ],
+      "follow_ups": [
+        "Tell me about a complex React component you built",
+        "How do you handle React performance optimization?"
+      ]
+    },
+    {
+      "skill": "JavaScript",
+      "questions": [
+        "What JavaScript concepts do you find most important?",
+        "How do you handle error handling in JavaScript?",
+        "Explain your experience with ES6+ features",
+        "What JavaScript frameworks and libraries do you prefer working with?"
+      ]
+    },
+    {
+      "skill": "IoT",
+      "questions": [
+        "IoT projects are fascinating! Can you describe the IoT systems you've worked on?"
+      ],
+      "follow_ups": []
+    }
+  ],
+  "response_patterns": [
+    {
+      "keywords": [
+        "challenge",
+        "difficult",
+        "problem"
+      ],
+      "responses": [
+        "That sounds challenging! How did you overcome it?",
+        "What approach did you take to solve that problem?",
+        "What did you learn from that experience?"
+      ]
+    },
+    {
+      "keywords": [
+        "project",
+        "built",
+        "developed"
+      ],
+      "responses": [
+        "That's impressive! Can you walk me through the technical details?",
+        "What technologies did you use for that project?",
+        "What was the most interesting part of building that?"
+      ]
+    },
+    {
+      "keywords": [
+        "api",
+        "backend",
+        "server"
+      ],
+      "responses": [
+        "That's a solid backend approach! How did you handle authentication and security?"
+      ]
+    },
+    {
+      "keywords": [
+        "component",
+        "state",
+        "hooks"
+      ],
+      "responses": [
+        "Great! Can you explain how you structured your React components?"
+      ]
+    },
+    {
+      "keywords": [
+        "sensor",
+        "device",
+        "communication"
+      ],
+      "responses": [
+        "That sounds complex! How did you handle device communication and data processing?"
+      ]
+    },
+    {
+      "keywords": [
+        "async",
+        "promise",
+        "callback"
+      ],
+      "responses": [
+        "Excellent! How do you handle asynchronous operations in your JavaScript code?"
+      ]
+    }
+  ]
+}

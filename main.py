@@ -17,6 +17,7 @@ from resume_parser import ResumeParser
 from question_generator import QuestionGenerator
 from response_analyzer import ResponseAnalyzer
 from database import SyncDatabaseManager
+from ai_providers import AIManager
 
 app = FastAPI(title="AI Interview System")
 templates = Jinja2Templates(directory="templates")
@@ -31,8 +32,10 @@ app.add_middleware(
 
 # Initialize components
 parser = ResumeParser()
-question_gen = QuestionGenerator()
-analyzer = ResponseAnalyzer()
+ai_provider = os.getenv("AI_PROVIDER", "ollama")
+ai_manager = AIManager(ai_provider)
+question_gen = QuestionGenerator(ai_manager=ai_manager)
+analyzer = ResponseAnalyzer(ai_manager=ai_manager)
 
 # Use sync database manager for simplicity
 db_manager = SyncDatabaseManager()
@@ -394,6 +397,102 @@ async def health_check():
         db_status = f"error: {str(e)}"
     
     return {"status": "healthy", "database": db_status}
+
+class DynamicQuestionRequest(BaseModel):
+    session_id: str
+    resume_id: str
+    conversation_history: List[Dict]
+    current_question_index: int
+
+@app.post("/generate-next-question")
+async def generate_next_question(request: DynamicQuestionRequest):
+    """Generate the next question based on conversation history"""
+    try:
+        print(f"=== GENERATE NEXT QUESTION API CALLED ===")
+        print(f"Session: {request.session_id}, Resume: {request.resume_id}")
+        print(f"Question index: {request.current_question_index}")
+        print(f"Conversation history: {len(request.conversation_history)} items")
+        
+        # Get resume data with fallback
+        resume_data = {"name": "Candidate", "skills": ["programming"], "experience": "Not specified"}
+        
+        try:
+            from bson import ObjectId
+            resume_doc = db_manager.db.resumes.find_one({"_id": ObjectId(request.resume_id)})
+            
+            if resume_doc:
+                resume_data = resume_doc.get('parsed_data', resume_data)
+                print(f"✅ Found resume data for: {resume_data.get('name', 'Unknown')}")
+            else:
+                print(f"⚠️  Resume not found, using fallback data")
+        except Exception as e:
+            print(f"⚠️  Could not fetch resume data: {str(e)}, using fallback")
+        
+        # Generate next question
+        next_question = question_gen.generate_next_question(
+            resume_data, 
+            request.conversation_history, 
+            request.current_question_index
+        )
+        
+        print(f"✅ Generated question: {next_question['question'][:100]}...")
+        
+        return {
+            "success": True,
+            "question": next_question
+        }
+        
+    except Exception as e:
+        print(f"❌ Error generating next question: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return {
+            "success": False,
+            "message": f"Error generating question: {str(e)}"
+        }
+
+@app.post("/test-generate-question")
+async def test_generate_question():
+    """Test endpoint for dynamic question generation"""
+    try:
+        # Sample conversation history for testing
+        test_conversation = [
+            {"question": "How are you doing today?", "answer": "I'm feeling great and excited about this interview!"},
+        ]
+        
+        # Sample resume data
+        test_resume_data = {
+            "name": "Alex",
+            "skills": ["JavaScript", "React", "Node.js"],
+            "experience": "2 years"
+        }
+        
+        # Generate next question
+        next_question = question_gen.generate_next_question(
+            test_resume_data, 
+            test_conversation, 
+            1
+        )
+        
+        return {
+            "success": True,
+            "question": next_question,
+            "test_data": {
+                "conversation": test_conversation,
+                "resume": test_resume_data
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error in test endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
 
 if __name__ == "__main__":
     import uvicorn

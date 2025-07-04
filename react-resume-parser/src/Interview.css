@@ -577,9 +577,363 @@
     font-size: 14px;
   }
   
-  .conversation-hint {
-    font-size: 11px;
+  /* Dynamic Question Generation Styles */
+.generating-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #667eea;
+  font-weight: 500;
+  animation: pulse 1.5s infinite;
+}
+
+.loading-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+  font-size: 18px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Enhanced button states */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn.btn-primary:disabled {
+  background: #ccc;
+  border-color: #ccc;
+}
+
+/* Conversation flow indicators */
+.conversation-flow {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.question-context {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+  font-style: italic;
+}
+
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .interview-container {
+    flex-direction: row;
+    height: 100vh;
   }
+  
+  .avatar-section {
+    flex: 0.8;
+    padding: 25px;
+  }
+  
+  .video-avatar {
+    width: 220px;
+    height: 280px;
+  }
+  
+  .question-section {
+    flex: 1.2;
+    padding: 30px;
+  }
+  
+  .question-text {
+    font-size: 20px;
+    min-height: 150px;
+  }
+  
+  .answer-input {
+    min-height: 120px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .interview-container {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .avatar-section {
+    height: 280px;
+    padding: 15px;
+    flex: none;
+  }
+  
+  .video-avatar {
+    width: 180px;
+    height: 220px;
+  }
+  
+  .face {
+    width: 110px;
+    height: 140px;
+  }
+  
+  .hair {
+    width: 140px;
+    height: 100px;
+    top: -12px;
+    left: -15px;
+  }
+  
+  .eyebrow {
+    width: 20px;
+    height: 3px;
+    top: 35px;
+  }
+  
+  .eyebrow.left { left: 20px; }
+  .eyebrow.right { right: 20px; }
+  
+  .eye {
+    width: 14px;
+    height: 10px;
+    top: 42px;
+  }
+  
+  .eye.left { left: 24px; }
+  .eye.right { right: 24px; }
+  
+  .eyeball {
+    width: 8px;
+    height: 8px;
+    left: 3px;
+  }
+  
+  .pupil {
+    width: 3px;
+    height: 3px;
+    top: 2px;
+    left: 2px;
+  }
+  
+  .nose {
+    width: 6px;
+    height: 10px;
+    top: 58px;
+    left: 52px;
+  }
+  
+  .mouth {
+    width: 25px;
+    height: 12px;
+    top: 80px;
+    left: 42px;
+  }
+  
+  .upper-lip {
+    width: 25px;
+    height: 6px;
+  }
+  
+  .lower-lip {
+    width: 23px;
+    height: 8px;
+  }
+  
+  .teeth {
+    width: 16px;
+    height: 2px;
+    top: 5px;
+    left: 4px;
+  }
+  
+  .chin {
+    width: 50px;
+    height: 25px;
+    bottom: -8px;
+    left: 30px;
+  }
+  
+  .neck {
+    width: 32px;
+    height: 48px;
+    bottom: 32px;
+    left: 64px;
+  }
+  
+  .shoulders {
+    width: 130px;
+    height: 65px;
+    bottom: 0;
+    left: 15px;
+  }
+  
+  .blazer {
+    height: 48px;
+  }
+  
+  .shirt {
+    width: 65px;
+    height: 32px;
+    top: 8px;
+    left: 32px;
+  }
+  
+  .interviewer-name {
+    font-size: 20px;
+  }
+  
+  .interviewer-title {
+    font-size: 14px;
+  }
+  
+  .interviewer-status {
+    font-size: 12px;
+  }
+  
+  .mute-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  
+  .question-section {
+    padding: 20px;
+    -webkit-box-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+    min-height: 60vh;
+  }
+  
+  .question-counter {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .question-text {
+    font-size: 18px;
+    min-height: 120px;
+    padding: 16px;
+  }
+  
+  .answer-input {
+    min-height: 100px;
+    padding: 16px;
+    font-size: 16px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  /* Dynamic Question Generation Styles */
+.generating-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #667eea;
+  font-weight: 500;
+  animation: pulse 1.5s infinite;
+}
+
+.loading-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+  font-size: 18px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Enhanced button states */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn.btn-primary:disabled {
+  background: #ccc;
+  border-color: #ccc;
+}
+
+/* Conversation flow indicators */
+.conversation-flow {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.question-context {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+  font-style: italic;
+}
 }
 
 @media (max-width: 480px) {
@@ -770,6 +1124,80 @@
   }
 }
 
+/* Dynamic Question Generation Styles */
+.generating-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #667eea;
+  font-weight: 500;
+  animation: pulse 1.5s infinite;
+}
+
+.loading-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+  font-size: 18px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Enhanced button states */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn.btn-primary:disabled {
+  background: #ccc;
+  border-color: #ccc;
+}
+
+/* Conversation flow indicators */
+.conversation-flow {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.question-context {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+  font-style: italic;
+}
+
 .avatar.speaking {
   transform: scale(1.05);
   animation: pulse 1.5s infinite;
@@ -835,6 +1263,13 @@
   margin-bottom: 30px;
 }
 
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
 .question-counter {
   background: #667eea;
   color: white;
@@ -843,6 +1278,27 @@
   font-size: 14px;
   font-weight: 600;
   display: inline-block;
+}
+
+.timer {
+  background: #28a745;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.timer.warning {
+  background: #dc3545;
+  animation: timerPulse 1s infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 .question-text {
@@ -1019,6 +1475,307 @@
 @keyframes pulse-recording {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
+}
+
+.realistic-avatar {
+  width: 280px;
+  height: 350px;
+  margin-bottom: 25px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.avatar-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.hair {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  height: 140px;
+  background: linear-gradient(135deg, #8B4513, #A0522D, #654321);
+  border-radius: 50% 50% 20% 20%;
+  z-index: 1;
+  box-shadow: inset 0 8px 20px rgba(0,0,0,0.2);
+}
+
+.hair::before {
+  content: '';
+  position: absolute;
+  top: 30px;
+  left: 15px;
+  width: 150px;
+  height: 80px;
+  background: linear-gradient(45deg, #CD853F, #D2691E);
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.hair::after {
+  content: '';
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  width: 140px;
+  height: 120px;
+  background: linear-gradient(180deg, #8B4513, #A0522D);
+  border-radius: 50% 50% 60% 60%;
+  z-index: -1;
+}
+
+.face-shape {
+  position: absolute;
+  top: 55px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 150px;
+  background: radial-gradient(ellipse at 40% 30%, #FFDBCC, #FFD0B8, #F5C2A8);
+  border-radius: 50% 50% 45% 45%;
+  box-shadow: 
+    inset 0 8px 16px rgba(0,0,0,0.08),
+    0 8px 20px rgba(0,0,0,0.15);
+  z-index: 2;
+}
+
+.eyebrow {
+  position: absolute;
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, #654321, #8B4513);
+  border-radius: 1px;
+  top: 28px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+}
+
+.eyebrow.left { left: 20px; transform: rotate(-10deg); }
+.eyebrow.right { right: 20px; transform: rotate(10deg); }
+
+.eye {
+  position: absolute;
+  width: 16px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+  top: 38px;
+  box-shadow: 
+    inset 0 1px 3px rgba(0,0,0,0.1),
+    0 2px 6px rgba(0,0,0,0.15);
+  border: 0.5px solid rgba(0,0,0,0.1);
+}
+
+.eye.left { left: 22px; }
+.eye.right { right: 22px; }
+
+.eyeball {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: radial-gradient(circle at 35% 25%, #87CEEB, #4682B4, #1E90FF);
+  border-radius: 50%;
+  top: 0.5px;
+  left: 3.5px;
+  animation: blink 5s infinite;
+}
+
+.pupil {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #000;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+}
+
+.highlight {
+  position: absolute;
+  width: 1.5px;
+  height: 1.5px;
+  background: white;
+  border-radius: 50%;
+  top: 1px;
+  left: 1px;
+  opacity: 1;
+}
+
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.1); }
+}
+
+.nose {
+  position: absolute;
+  width: 4px;
+  height: 8px;
+  background: linear-gradient(135deg, #F5C2A8, #E8B4A0);
+  border-radius: 50%;
+  top: 55px;
+  left: 58px;
+  box-shadow: 
+    inset -0.5px 0.5px 1px rgba(0,0,0,0.15),
+    0.5px 0.5px 2px rgba(0,0,0,0.1);
+}
+
+.mouth {
+  position: absolute;
+  width: 20px;
+  height: 10px;
+  top: 78px;
+  left: 50px;
+  transition: all 0.12s ease;
+}
+
+.lips {
+  position: absolute;
+  width: 20px;
+  height: 6px;
+  background: linear-gradient(135deg, #FF6B9D, #E91E63, #C2185B);
+  border-radius: 10px;
+  top: 2px;
+  transition: all 0.12s ease;
+  box-shadow: 
+    inset 0 1px 2px rgba(255,255,255,0.4),
+    0 1px 4px rgba(0,0,0,0.2);
+}
+
+.teeth {
+  position: absolute;
+  width: 12px;
+  height: 2px;
+  background: linear-gradient(to bottom, #FFFFFF, #F8F8FF);
+  top: 3px;
+  left: 4px;
+  border-radius: 1px;
+  opacity: 0;
+  transition: all 0.12s ease;
+  box-shadow: 0 0.5px 1px rgba(0,0,0,0.1);
+}
+
+.mouth.talking {
+  animation: monicaLipSync 0.25s infinite;
+}
+
+.mouth.talking .teeth {
+  opacity: 1;
+  animation: teethReveal 0.25s infinite;
+}
+
+.mouth.talking .lips {
+  animation: lipsAnimation 0.25s infinite;
+}
+
+@keyframes monicaLipSync {
+  0% { height: 10px; }
+  30% { height: 14px; }
+  60% { height: 12px; }
+  100% { height: 10px; }
+}
+
+@keyframes lipsAnimation {
+  0% { transform: scaleY(1); border-radius: 10px; }
+  30% { transform: scaleY(0.7); border-radius: 8px; }
+  60% { transform: scaleY(1.1); border-radius: 12px; }
+  100% { transform: scaleY(1); border-radius: 10px; }
+}
+
+@keyframes teethReveal {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.2); }
+}
+
+.cheek {
+  position: absolute;
+  width: 14px;
+  height: 10px;
+  background: radial-gradient(circle, rgba(255, 192, 203, 0.8), rgba(255, 182, 193, 0.5));
+  border-radius: 50%;
+  top: 65px;
+  animation: naturalBlush 4s infinite;
+}
+
+.cheek.left { left: 10px; }
+.cheek.right { right: 10px; }
+
+@keyframes naturalBlush {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.05); }
+}
+
+.neck {
+  position: absolute;
+  width: 40px;
+  height: 60px;
+  background: linear-gradient(to bottom, #FDBCB4, #F4A6A6);
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 0 0 20px 20px;
+}
+
+.shoulders {
+  position: absolute;
+  width: 160px;
+  height: 80px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.blazer {
+  width: 100%;
+  height: 60px;
+  background: linear-gradient(135deg, #2C3E50, #34495E);
+  border-radius: 20px 20px 0 0;
+}
+
+.collar {
+  position: absolute;
+  width: 80px;
+  height: 40px;
+  background: white;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 10px;
+}
+
+.realistic-avatar.speaking {
+  animation: monicaSpeaking 1.2s infinite;
+}
+
+.realistic-avatar.speaking .face-shape {
+  animation: expressiveface 1.2s infinite;
+}
+
+.realistic-avatar.speaking .hair {
+  animation: hairMovement 2s infinite;
+}
+
+@keyframes monicaSpeaking {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+@keyframes expressiveface {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.008); }
+}
+
+@keyframes hairMovement {
+  0%, 100% { transform: translateX(-50%) rotate(0deg); }
+  50% { transform: translateX(-50%) rotate(0.5deg); }
 }
 
 .interviewer-status {

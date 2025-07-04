@@ -11,80 +11,61 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState(null);
-  const [conversationMode, setConversationMode] = useState(true);
   const [lastResponse, setLastResponse] = useState('');
+  const [dynamicQuestions, setDynamicQuestions] = useState([]);
+  const [conversationHistory, setConversationHistory] = useState([]);
+  const [totalQuestions] = useState(15);
+  const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
+  const [isGreeting, setIsGreeting] = useState(true);
+  const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
+  const [timerInterval, setTimerInterval] = useState(null);
+
 
   useEffect(() => {
-    if (questions && questions.length > 0) {
-      if (currentQuestion === 0) {
-        // Start with natural greeting
-        setTimeout(() => {
-          const greetings = [
-            "Hello! How are you doing today?",
-            "Hi there! Hope you're having a great day!",
-            "Hey! Nice to meet you! How's everything going?"
-          ];
-          const greeting = greetings[Math.floor(Math.random() * greetings.length)];
-          speakAndTypeQuestion(greeting, true);
-        }, 1000);
-      } else {
-        speakAndTypeQuestion(questions[currentQuestion]?.question || '');
-      }
+    // Initialize with a warm, natural greeting
+    if (currentQuestion === 0) {
+      const greetingQuestion = {
+        id: "greeting",
+        type: "greeting",
+        question: "Hello! I'm Sarah, and I'm excited to chat with you today. How are you doing?",
+        duration: 5
+      };
+      setDynamicQuestions([greetingQuestion]);
+      
+      // Start 30-minute timer
+      const interval = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            // Auto-end interview when time runs out
+            setTimeout(() => {
+              speakAndTypeQuestion("Time's up! Thank you for the wonderful conversation.", true);
+              setTimeout(() => onComplete([]), 3000);
+            }, 1000);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      setTimerInterval(interval);
+      
+      setTimeout(() => {
+        speakAndTypeQuestion(greetingQuestion.question, true);
+      }, 1000);
     }
-  }, [currentQuestion, questions]);
+    
+    return () => {
+      if (timerInterval) clearInterval(timerInterval);
+    };
+  }, []);
 
   const speakAndTypeQuestion = (text, isGreeting = false) => {
     setIsTyping(true);
     setAnswerEnabled(false);
     setDisplayedText('');
     
-    let conversationalText = text;
-    
-    // Add intelligent responses based on previous answer content
-    if (currentQuestion > 0 && lastResponse && !isGreeting) {
-      const lowerResponse = lastResponse.toLowerCase();
-      let responses;
-      
-      // Analyze the content of the previous response
-      if (lowerResponse.includes('challenge') || lowerResponse.includes('difficult') || lowerResponse.includes('problem')) {
-        responses = [
-          "That sounds like quite a challenge. I admire how you handled it. ",
-          "Difficulties can really teach us a lot. Thanks for sharing that experience. ",
-          "It takes strength to work through challenges like that. "
-        ];
-      } else if (lowerResponse.includes('enjoy') || lowerResponse.includes('love') || lowerResponse.includes('passion')) {
-        responses = [
-          "I can hear the passion in your voice! That's wonderful. ",
-          "It's so great when you find something you truly enjoy. ",
-          "Your enthusiasm really comes through! "
-        ];
-      } else if (lowerResponse.includes('team') || lowerResponse.includes('collaborate') || lowerResponse.includes('work with')) {
-        responses = [
-          "Teamwork is so important. It sounds like you value collaboration. ",
-          "Working well with others is such a valuable skill. ",
-          "I can tell you're someone who works well with people. "
-        ];
-      } else if (lowerResponse.includes('learn') || lowerResponse.includes('grow') || lowerResponse.includes('develop')) {
-        responses = [
-          "I love that you're focused on learning and growth! ",
-          "Continuous learning is so important. That's a great mindset. ",
-          "Your commitment to development really shows. "
-        ];
-      } else {
-        responses = [
-          "That's really interesting! ",
-          "I see, that makes perfect sense. ",
-          "Thanks for sharing that with me. ",
-          "That's a wonderful perspective. ",
-          "I appreciate you telling me that. "
-        ];
-      }
-      
-      conversationalText = responses[Math.floor(Math.random() * responses.length)] + text;
-    }
-    
     // Text-to-speech setup
-    const utterance = new SpeechSynthesisUtterance(conversationalText);
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.85;
     utterance.pitch = 1.2;
     utterance.volume = 0.9;
@@ -113,8 +94,8 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
     const speed = 40;
     
     const typeInterval = setInterval(() => {
-      if (i < conversationalText.length) {
-        setDisplayedText(conversationalText.substring(0, i + 1));
+      if (i < text.length) {
+        setDisplayedText(text.substring(0, i + 1));
         i++;
       } else {
         clearInterval(typeInterval);
@@ -125,8 +106,8 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
     
     // Stop typing when speech ends
     utterance.onend = () => {
-      if (i < conversationalText.length) {
-        setDisplayedText(conversationalText);
+      if (i < text.length) {
+        setDisplayedText(text);
         clearInterval(typeInterval);
         setIsTyping(false);
         setAnswerEnabled(true);
@@ -141,7 +122,8 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
     if (lowerAnswer.includes('not good') || lowerAnswer.includes('bad') || 
         lowerAnswer.includes('terrible') || lowerAnswer.includes('awful') ||
         lowerAnswer.includes('stressed') || lowerAnswer.includes('tired') ||
-        lowerAnswer.includes('sad') || lowerAnswer.includes('difficult')) {
+        lowerAnswer.includes('sad') || lowerAnswer.includes('difficult') ||
+        lowerAnswer.includes('anxious') || lowerAnswer.includes('nervous')) {
       return 'negative';
     }
     
@@ -162,72 +144,123 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
     return 'neutral';
   };
 
-  const getAdaptiveResponse = (userAnswer, mood) => {
-    if (mood === 'negative') {
-      return [
-        "Oh, I'm sorry to hear that. I hope our conversation can brighten your day a bit. I'm Sarah, and I'm here to listen. ",
-        "I understand, some days are tougher than others. I'm Sarah, and I appreciate you taking the time to chat despite not feeling your best. ",
-        "That sounds challenging. I'm Sarah, and I want you to know that it's okay to have difficult days. Let's take this conversation at your pace. "
-      ];
-    } else if (mood === 'positive') {
-      return [
-        "That's wonderful to hear! Your positive energy is contagious. I'm Sarah, and I'm excited to chat with someone in such great spirits! ",
-        "That's fantastic! I love talking with people who are having a great day. I'm Sarah, and your enthusiasm is already making this conversation better! ",
-        "That's amazing! It's so refreshing to meet someone with such positive energy. I'm Sarah, and I'm thrilled to be chatting with you! "
-      ];
-    } else {
-      return [
-        "That's perfectly fine! I'm Sarah, and I'm glad we can have this conversation together. ",
-        "Fair enough! I'm Sarah, and I appreciate your honesty. Let's have a nice chat. ",
-        "I understand! I'm Sarah, and I'm looking forward to getting to know you better. "
-      ];
-    }
-  };
-
-  const adaptQuestionBasedOnMood = (originalQuestion, mood, userAnswer) => {
-    if (mood === 'negative') {
-      // Make questions more gentle and supportive
-      if (originalQuestion.includes('tell me about yourself')) {
-        return "When you're ready, could you share a bit about yourself? Take your time, there's no pressure.";
-      }
-      if (originalQuestion.includes('background') || originalQuestion.includes('experience')) {
-        return "I'd love to hear about your background when you feel comfortable sharing. What aspects of your experience bring you some satisfaction?";
-      }
-    } else if (mood === 'positive') {
-      // Make questions more energetic
-      if (originalQuestion.includes('tell me about yourself')) {
-        return "I can tell you're in great spirits! I'd love to hear all about yourself and what makes you so enthusiastic!";
-      }
-      if (originalQuestion.includes('background') || originalQuestion.includes('experience')) {
-        return "With that positive energy, I'm excited to hear about your background! What experiences have you enjoyed most?";
-      }
-    }
+  const getEmpatheticResponse = (userAnswer, mood) => {
+    const responses = {
+      negative: [
+        "I'm sorry to hear that. I hope our conversation can brighten your day a bit. I'm here to listen, and we can take this at whatever pace feels comfortable for you.",
+        "That sounds challenging. I appreciate you sharing that with me. I want you to know that it's okay to have difficult days.",
+        "I understand, some days are tougher than others. I'm grateful you're taking time to chat despite not feeling your best."
+      ],
+      positive: [
+        "That's wonderful to hear! Your positive energy is already making this conversation better.",
+        "I'm so glad you're having a great day! It's always a pleasure to talk with someone in such good spirits.",
+        "That's fantastic! I love your enthusiasm - it's contagious!"
+      ],
+      neutral: [
+        "I appreciate your honesty. I'm looking forward to getting to know you better.",
+        "That's perfectly fine. I'm glad we can have this conversation together.",
+        "Thanks for sharing. I'm excited to learn more about you!"
+      ]
+    };
     
-    return originalQuestion;
+    return responses[mood][Math.floor(Math.random() * responses[mood].length)];
   };
 
-  const nextQuestion = () => {
-    // Handle greeting response with mood analysis
-    if (currentQuestion === 0 && displayedText.includes('How are you')) {
-      const mood = analyzeUserMood(currentAnswer);
-      const responses = getAdaptiveResponse(currentAnswer, mood);
-      const response = responses[Math.floor(Math.random() * responses.length)];
+  const generateNextQuestion = async () => {
+    if (currentQuestion >= totalQuestions - 1) {
+      return null;
+    }
+
+    setIsGeneratingQuestion(true);
+    
+    try {
+      const response = await fetch('/generate-next-question', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          resume_id: resumeId,
+          conversation_history: conversationHistory,
+          current_question_index: currentQuestion + 1
+        })
+      });
       
-      // Adapt the first interview question based on mood
-      const adaptedQuestion = adaptQuestionBasedOnMood(questions[0]?.question || '', mood, currentAnswer);
+      const result = await response.json();
+      
+      if (result.success && result.question) {
+        return result.question;
+      } else {
+        return null;
+      }
+      
+    } catch (error) {
+      console.error('Network error generating question:', error);
+      return null;
+    } finally {
+      setIsGeneratingQuestion(false);
+    }
+  };
+
+
+
+  const nextQuestion = async () => {
+    // Handle greeting response specially
+    if (isGreeting && currentQuestion === 0) {
+      const mood = analyzeUserMood(currentAnswer);
+      const empathyResponse = getEmpatheticResponse(currentAnswer, mood);
+      
+      // Store greeting conversation
+      const greetingHistory = [{
+        question: "How are you doing today?",
+        answer: currentAnswer.trim()
+      }];
+      
+      setConversationHistory(greetingHistory);
+      
+      setAnswers([{
+        question_id: "greeting",
+        answer: currentAnswer
+      }]);
+      
+      // Generate the first real interview question with empathy
+      const firstQuestion = {
+        id: "intro_1",
+        type: "introduction",
+        question: `${empathyResponse} Let's start with the basics - could you tell me about yourself and your background in software development?`,
+        duration: 5
+      };
+      
+      setDynamicQuestions(prev => [...prev, firstQuestion]);
+      setCurrentAnswer('');
+      setCurrentQuestion(1);
+      setIsGreeting(false);
       
       setTimeout(() => {
-        speakAndTypeQuestion(response + adaptedQuestion, true);
-      }, 1000);
+        speakAndTypeQuestion(firstQuestion.question);
+      }, 1500);
       
-      setCurrentAnswer('');
       return;
     }
+
+    // Store the current Q&A in conversation history FIRST
+    const currentQ = dynamicQuestions[currentQuestion];
+    const updatedHistory = [...conversationHistory];
     
+    if (currentQ && currentAnswer.trim()) {
+      updatedHistory.push({
+        question: currentQ.question,
+        answer: currentAnswer.trim()
+      });
+      setConversationHistory(updatedHistory);
+    }
+
+    // Update answers
     const newAnswers = [
       ...answers,
       {
-        question_id: questions[currentQuestion].id,
+        question_id: currentQ?.id || `question_${currentQuestion + 1}`,
         answer: currentAnswer,
       },
     ];
@@ -235,8 +268,30 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
     setLastResponse(currentAnswer);
     setCurrentAnswer('');
 
-    if (currentQuestion < questions.length - 1) {
+    if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
+      
+      // Generate the next question using AI
+      const nextQ = await generateNextQuestion();
+      if (nextQ) {
+        setDynamicQuestions(prev => [...prev, nextQ]);
+        setTimeout(() => {
+          speakAndTypeQuestion(nextQ.question);
+        }, 1500);
+      } else {
+        // End interview if AI fails to generate question
+        setTimeout(() => {
+          const endings = [
+            "Thank you so much! This has been such a lovely conversation. I really enjoyed talking with you!",
+            "That was wonderful! I had a great time chatting with you. Thanks for being so open!",
+            "This was fantastic! I really appreciate you sharing so much with me. It was a pleasure!"
+          ];
+          const ending = endings[Math.floor(Math.random() * endings.length)];
+          speakAndTypeQuestion(ending, true);
+          setTimeout(() => onComplete(newAnswers), 3000);
+        }, 1000);
+      }
+      
     } else {
       // Natural ending
       setTimeout(() => {
@@ -252,19 +307,43 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
     }
   };
 
-  const skipQuestion = () => {
+  const skipQuestion = async () => {
+    const currentQ = dynamicQuestions[currentQuestion];
+    
+    // Store skip in conversation history
+    const updatedHistory = [...conversationHistory];
+    if (currentQ) {
+      updatedHistory.push({
+        question: currentQ.question,
+        answer: "[Skipped - moved to next topic]"
+      });
+      setConversationHistory(updatedHistory);
+    }
+
     const newAnswers = [
       ...answers,
       {
-        question_id: questions[currentQuestion].id,
+        question_id: currentQ?.id || `question_${currentQuestion + 1}`,
         answer: '',
       },
     ];
     setAnswers(newAnswers);
     setCurrentAnswer('');
 
-    if (currentQuestion < questions.length - 1) {
+    if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
+      
+      // Generate the next question using AI
+      const nextQ = await generateNextQuestion();
+      if (nextQ) {
+        setDynamicQuestions(prev => [...prev, nextQ]);
+        setTimeout(() => {
+          speakAndTypeQuestion(nextQ.question);
+        }, 1000);
+      } else {
+        // End interview if AI fails to generate question
+        onComplete(newAnswers);
+      }
     } else {
       onComplete(newAnswers);
     }
@@ -272,6 +351,15 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
 
   // Load voices and setup speech recognition when component mounts
   useEffect(() => {
+    // Ensure right-click context menu is always enabled
+    const enableRightClick = () => {
+      document.oncontextmenu = null;
+      document.onselectstart = null;
+      document.ondragstart = null;
+      return true;
+    };
+    enableRightClick();
+    
     const loadVoices = () => {
       speechSynthesis.getVoices();
     };
@@ -313,55 +401,65 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
       setRecognition(recognitionInstance);
     }
   }, []);
-  
-  if (!questions || questions.length === 0) {
-    return <div>Loading questions...</div>;
+
+  if (dynamicQuestions.length === 0) {
+    return (
+      <div className="interview-container">
+        <div className="loading-message">
+          <div className="loading-spinner"></div>
+          <p>Preparing your personalized interview experience...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="interview-container">
       <div className="avatar-section">
-        <div className={`video-avatar ${isTyping ? 'speaking' : ''}`}>
-          <div className="video-frame">
-            <div className="face-container">
-              <div className="face">
-                <div className="hair"></div>
-                <div className="forehead"></div>
-                <div className="eyebrow left"></div>
-                <div className="eyebrow right"></div>
-                <div className="eye left">
-                  <div className="eyeball"></div>
-                  <div className="pupil"></div>
-                </div>
-                <div className="eye right">
-                  <div className="eyeball"></div>
-                  <div className="pupil"></div>
-                </div>
-                <div className="nose"></div>
-                <div className="cheek left"></div>
-                <div className="cheek right"></div>
-                <div className={`mouth ${isTyping ? 'talking' : ''}`}>
-                  <div className="upper-lip"></div>
-                  <div className="lower-lip"></div>
-                  <div className="teeth"></div>
-                </div>
-                <div className="chin"></div>
+        <div className={`realistic-avatar ${isTyping ? 'speaking' : ''}`}>
+          <div className="avatar-face">
+            <div className="hair"></div>
+            <div className="face-shape">
+              <div className="eyebrow left"></div>
+              <div className="eyebrow right"></div>
+              <div className="eye left">
+                <div className="eyeball"></div>
+                <div className="pupil"></div>
+                <div className="highlight"></div>
               </div>
-              <div className="neck"></div>
-              <div className="shoulders">
-                <div className="blazer"></div>
-                <div className="shirt"></div>
+              <div className="eye right">
+                <div className="eyeball"></div>
+                <div className="pupil"></div>
+                <div className="highlight"></div>
               </div>
+              <div className="nose"></div>
+              <div className={`mouth ${isTyping ? 'talking' : ''}`}>
+                <div className="lips"></div>
+                <div className="teeth"></div>
+              </div>
+              <div className="cheek left"></div>
+              <div className="cheek right"></div>
             </div>
-          </div>
-          <div className="video-controls">
-            <div className="recording-indicator ${isTyping ? 'active' : ''}"></div>
+            <div className="neck"></div>
+            <div className="shoulders">
+              <div className="blazer"></div>
+              <div className="collar"></div>
+            </div>
           </div>
         </div>
         <div className="interviewer-name">Sarah Johnson</div>
         <div className="interviewer-title">Senior Technical Interviewer</div>
         <div className="interviewer-status">
-          {isTyping ? (
+          {isGeneratingQuestion ? (
+            <div className="generating-indicator">
+              🤔 Thinking about your response...
+              <div className="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          ) : isTyping ? (
             <div className="typing-indicator">
               💬 Sarah is chatting
               <div className="typing-dots">
@@ -388,14 +486,17 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
         </button>
         <div 
           className="progress-bar" 
-          style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+          style={{ width: `${((currentQuestion + 1) / totalQuestions) * 100}%` }}
         ></div>
       </div>
       
       <div className="question-section">
         <div className="question-header">
           <div className="question-counter">
-            Question {currentQuestion + 1} of {questions.length}
+            Question {currentQuestion + 1} of {totalQuestions}
+          </div>
+          <div className={`timer ${timeRemaining < 300 ? 'warning' : ''}`}>
+            ⏱️ {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
           </div>
         </div>
         
@@ -409,7 +510,7 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
             className="answer-input" 
             value={currentAnswer}
             onChange={(e) => setCurrentAnswer(e.target.value)}
-            placeholder={currentQuestion === 0 && displayedText.includes('How are you') ? "Type how you're doing..." : "Share your thoughts..."}
+            placeholder={isGreeting ? "Share how you're feeling today..." : "Share your thoughts..."}
             disabled={!answerEnabled}
           />
           
@@ -441,14 +542,15 @@ const Interview = ({ questions, sessionId, resumeId, onComplete }) => {
               <button 
                 className="btn btn-primary" 
                 onClick={nextQuestion} 
-                disabled={!currentAnswer.trim() || !answerEnabled}
+                disabled={!currentAnswer.trim() || !answerEnabled || isGeneratingQuestion}
               >
-                {currentQuestion < questions.length - 1 ? 'Next Question' : 'Finish Interview'}
+                {isGeneratingQuestion ? 'Generating...' : 
+                 currentQuestion < totalQuestions - 1 ? 'Next Question' : 'Finish Interview'}
               </button>
               <button 
                 className="btn btn-secondary" 
                 onClick={skipQuestion}
-                disabled={!answerEnabled}
+                disabled={!answerEnabled || isGeneratingQuestion}
               >
                 Skip
               </button>
